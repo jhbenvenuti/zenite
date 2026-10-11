@@ -1,0 +1,1981 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d1c">
+<meta name="description" content="RPG online de evolução e rodadas para jogar com os amigos. Crie seu lutador, suba as zonas e derrube Sarnak.">
+<meta property="og:title" content="Zênite">
+<meta property="og:description" content="Crie seu lutador, suba as zonas e derrube Sarnak. RPG online para jogar com os amigos.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0d1c'/%3E%3Cpath d='M32 10 L52 52 H12 Z' fill='none' stroke='%23ffcf70' stroke-width='5' stroke-linejoin='round'/%3E%3Ccircle cx='32' cy='10' r='5' fill='%23ffcf70'/%3E%3C/svg%3E">
+<title>Zênite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+html { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.login { max-width: 420px; display: grid; gap: 12px; }
+.login input { width: 100%; }
+/* Layout: céu noturno com brilho de zênite no topo; barra do lutador fixa, abas, painéis em grade que viram coluna no celular. */
+:root {
+  --sky-0: #0a0d1c;
+  --sky-1: #11162e;
+  --sky-2: #182042;
+  --sky-3: #222b55;
+  --line: #2e3a6e;
+  --fg: #ece8f6;
+  --muted: #9ba2c8;
+  --faint: #6c7399;
+  --sun: #ffcf70;
+  --sun-ink: #21160a;
+  --ki: #6cc6ff;
+  --hp: #ff6b7d;
+  --good: #63d9a0;
+  --bad: #ff6b6b;
+  --xp: #c9a2ff;
+  --c-devorador: #a978ff;
+  --c-danca: #ff5f8f;
+  --c-batedor: #3fd6a4;
+  --c-sentinela: #77a3ff;
+  --c-arauto: #ff8c42;
+  --c-porta: #c3e45f;
+  --c-npc: #d66a5a;
+  --f-display: "Marcellus SC", "Trajan Pro", Georgia, serif;
+  --f-ui: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --r: 10px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: var(--sky-0);
+  color: var(--fg);
+  font-family: var(--f-ui);
+  font-size: 16px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -8%, rgba(255,207,112,.16), transparent 70%),
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 12%, rgba(255,255,255,.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 64% 38%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1px 1px at 32% 64%, rgba(255,255,255,.3), transparent 60%),
+    radial-gradient(1px 1px at 88% 72%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1px 1px at 6% 86%, rgba(255,255,255,.3), transparent 60%);
+}
+#app { position: relative; z-index: 1; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; letter-spacing: .02em; text-wrap: balance; margin: 0; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: .86rem; }
+.label { font-size: .74rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.stack { display: grid; gap: 12px; }
+.grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid3 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.grid2 > *, .grid3 > * { min-width: 0; }
+
+/* Barra do lutador */
+.hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(10,13,28,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.hud-in { display: flex; gap: 14px; align-items: center; padding-block: 10px; flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-size: 1.35rem; letter-spacing: .14em; color: var(--sun); }
+.hud-me { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; flex-wrap: wrap; }
+.hud-name { font-weight: 700; white-space: nowrap; }
+.bars { display: grid; gap: 4px; min-width: 150px; flex: 1; max-width: 300px; }
+.bar { position: relative; height: 9px; border-radius: 5px; background: var(--sky-3); overflow: hidden; }
+.bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 5px; transition: width .5s ease; }
+.bar.hp > i { background: linear-gradient(90deg, #e2475f, var(--hp)); }
+.bar.ki > i { background: linear-gradient(90deg, #3b8fd6, var(--ki)); }
+.bar.xp > i { background: linear-gradient(90deg, #8b5fd8, var(--xp)); }
+.bar-txt { display: flex; justify-content: space-between; font-size: .74rem; color: var(--muted); }
+.gold { color: var(--sun); font-weight: 700; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.warn { border-color: rgba(255,207,112,.5); color: var(--sun); }
+.chip.bad { border-color: rgba(255,107,107,.5); color: var(--bad); }
+.chip.good { border-color: rgba(99,217,160,.5); color: var(--good); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* Abas */
+.tabs { display: flex; gap: 4px; overflow-x: auto; padding-block: 6px 0; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { border: 0; background: none; padding: 9px 14px 11px; color: var(--muted); font-weight: 600; letter-spacing: .04em; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--sun); }
+.tab .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--sun); color: var(--sun-ink); font-size: .72rem; line-height: 18px; text-align: center; }
+
+main { padding-block: 22px 60px; }
+.panel { background: linear-gradient(180deg, rgba(34,43,85,.55), rgba(17,22,46,.75)); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sec { display: grid; gap: 14px; margin-bottom: 26px; }
+.sec-h { display: flex; justify-content: space-between; align-items: end; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+
+.btn { border: 1px solid var(--line); background: var(--sky-2); padding: 8px 14px; border-radius: 8px; font-weight: 600; letter-spacing: .02em; transition: background .15s, border-color .15s, transform .1s; }
+.btn:hover:not(:disabled) { border-color: var(--muted); background: var(--sky-3); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn.primary { background: var(--sun); color: var(--sun-ink); border-color: var(--sun); }
+.btn.primary:hover:not(:disabled) { background: #ffe0a0; border-color: #ffe0a0; }
+.btn.danger { border-color: rgba(255,107,107,.6); color: var(--bad); }
+.btn.sm { padding: 5px 10px; font-size: .86rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+input[type=text], input[type=number], select { background: var(--sky-1); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+input[type=text] { width: 100%; }
+
+.list { display: grid; gap: 8px; }
+.item { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: rgba(10,13,28,.45); border: 1px solid rgba(46,58,110,.7); flex-wrap: wrap; }
+.item > .grow { flex: 1; min-width: 180px; display: grid; gap: 2px; }
+.item.done { opacity: .55; }
+.item-t { font-weight: 700; }
+.tag { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; padding: 1px 7px; border-radius: 4px; background: var(--sky-3); color: var(--muted); font-weight: 700; }
+.tag.historia { color: var(--sun); }
+.tag.chefe { color: var(--hp); }
+.tag.grupo { color: var(--c-porta); }
+.tag.caca { color: var(--c-arauto); }
+.tag.coleta, .tag.entrega { color: var(--c-batedor); }
+.tag.expedicao { color: var(--ki); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(46,58,110,.7); white-space: nowrap; }
+th { font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; }
+.scroll-x { overflow-x: auto; }
+
+.stat-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(46,58,110,.7); }
+.stat-row b { font-size: 1.1rem; }
+.cls-pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.move { display: grid; gap: 4px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(10,13,28,.45); }
+.stage { font-family: var(--f-display); font-size: .82rem; color: var(--sun); }
+.prog { height: 5px; background: var(--sky-3); border-radius: 3px; overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--sun); }
+
+.fighter-card { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: center; }
+@media (max-width: 480px) { .fighter-card { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+.sil { width: 120px; height: 150px; }
+
+/* Criação */
+.hero { padding-block: 34px 20px; display: grid; gap: 10px; }
+.hero h1 { font-size: clamp(2.6rem, 9vw, 4.6rem); color: var(--sun); letter-spacing: .12em; line-height: 1; }
+.hero p { max-width: 62ch; color: var(--muted); font-size: 1.05rem; }
+.cls-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.cls-opt { text-align: left; background: rgba(10,13,28,.5); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center; }
+.cls-opt[aria-pressed="true"] { border-color: var(--cc); box-shadow: 0 0 0 1px var(--cc), 0 0 24px -8px var(--cc); }
+.cls-opt .sil { width: 64px; height: 80px; }
+.cls-opt b { font-family: var(--f-display); font-weight: 400; font-size: 1.05rem; color: var(--cc); }
+
+/* Batalha */
+.battle { position: fixed; inset: 0; z-index: 100; background: rgba(6,8,18,.96); display: grid; grid-template-rows: auto 1fr auto auto; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 12px); gap: 10px; overflow: hidden; }
+.b-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; max-width: 900px; width: 100%; margin: 0 auto; }
+.b-side { display: grid; gap: 4px; min-width: 0; }
+.b-side.r { text-align: right; }
+.b-side.r .bar > i { inset: 0 0 0 auto; }
+.b-name { font-family: var(--f-display); font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-vs { font-family: var(--f-display); color: var(--sun); font-size: 1.3rem; }
+.b-stage { position: relative; display: grid; grid-template-columns: 1fr minmax(120px, 220px) 1fr; align-items: center; max-width: 900px; width: 100%; margin: 0 auto; min-height: 240px; }
+.b-stage::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: 14%; height: 2px; background: linear-gradient(90deg, transparent, var(--line), transparent); }
+.b-f { position: relative; display: grid; justify-items: center; }
+.b-f .sil { width: min(150px, 34vw); height: auto; aspect-ratio: 4/5; max-width: 100%; transition: transform .25s ease, filter .25s; }
+.b-f.r .sil { transform: scaleX(-1); }
+.b-f.lunge-l .sil { transform: translateX(28%) scale(1.06); }
+.b-f.lunge-r .sil { transform: scaleX(-1) translateX(28%) scale(1.06); }
+.b-f.hit .sil { animation: hit .35s; filter: brightness(2) saturate(.3); }
+.b-f.dodge .sil { opacity: .4; }
+.b-f.guard::before { content: ""; position: absolute; inset: 10% 15%; border: 2px solid var(--ki); border-radius: 50%; box-shadow: 0 0 22px var(--ki); animation: pulse .7s ease-out; }
+.b-f.charge::before { content: ""; position: absolute; inset: 0 10%; border-radius: 50%; background: radial-gradient(circle, var(--fc) 0%, transparent 65%); opacity: .6; animation: pulse .8s ease-out; }
+.b-f.down .sil { transform: translateY(14%) rotate(-14deg); opacity: .35; transition: all 1.2s ease; }
+.b-f.r.down .sil { transform: scaleX(-1) translateY(14%) rotate(-14deg); }
+@keyframes hit { 0%,100% { translate: 0; } 25% { translate: -7px; } 75% { translate: 7px; } }
+@keyframes pulse { from { transform: scale(.6); opacity: 0; } 40% { opacity: .9; } to { transform: scale(1.15); opacity: 0; } }
+.float { position: absolute; top: 18%; left: 50%; translate: -50% 0; font-family: var(--f-display); font-size: 1.8rem; font-weight: 400; color: #fff; text-shadow: 0 2px 8px #000; animation: rise 1.1s ease-out forwards; pointer-events: none; white-space: nowrap; }
+.float.crit { color: var(--sun); font-size: 2.4rem; }
+.float.heal { color: var(--good); }
+.float.miss { color: var(--muted); font-size: 1.2rem; }
+@keyframes rise { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-60px); opacity: 0; } }
+.b-cards { display: flex; gap: 10px; justify-content: center; perspective: 600px; }
+.card { width: 96px; min-height: 64px; border-radius: 8px; border: 1px solid var(--line); background: var(--sky-2); display: grid; place-items: center; padding: 6px; text-align: center; font-size: .82rem; font-weight: 700; transform: rotateY(90deg); opacity: 0; transition: transform .35s ease, opacity .35s; }
+.card.show { transform: rotateY(0); opacity: 1; }
+.b-ult { position: absolute; inset: -20% -50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(0,0,0,.4), rgba(0,0,0,.92) 70%); z-index: 3; font-family: var(--f-display); font-size: clamp(1.8rem, 7vw, 3.4rem); color: var(--sun); text-align: center; letter-spacing: .08em; animation: ult 1.5s ease forwards; padding: 0 20%; }
+@keyframes ult { 0% { opacity: 0; letter-spacing: .5em; } 25% { opacity: 1; letter-spacing: .08em; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.shake { animation: shake .4s; }
+@keyframes shake { 0%,100% { transform: translate(0); } 20% { transform: translate(-8px, 4px); } 40% { transform: translate(7px, -5px); } 60% { transform: translate(-5px, -3px); } 80% { transform: translate(4px, 5px); } }
+.b-log { max-width: 900px; width: 100%; margin: 0 auto; height: 116px; overflow-y: auto; font-size: .9rem; border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.b-log .r { font-family: var(--f-display); color: var(--sun); margin-top: 4px; }
+.b-ctrl { max-width: 900px; width: 100%; margin: 0 auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.b-ctrl .btn { min-width: 0; }
+.act { display: grid; gap: 0; text-align: center; line-height: 1.15; }
+.act small { font-weight: 500; color: var(--muted); font-size: .72rem; }
+.b-res { font-family: var(--f-display); font-size: 1.5rem; text-align: center; }
+
+.modal { position: fixed; inset: 0; z-index: 90; background: rgba(6,8,18,.82); display: grid; place-items: center; padding: 16px; }
+.modal-in { width: min(560px, 100%); max-height: 88vh; overflow-y: auto; background: var(--sky-1); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); translate: -50% 0; z-index: 200; background: var(--sky-2); border: 1px solid var(--line); padding: 10px 16px; border-radius: 8px; max-width: min(92vw, 520px); box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: tin .25s ease; }
+.toast.bad { border-color: var(--bad); }
+.toast.good { border-color: var(--good); }
+@keyframes tin { from { opacity: 0; transform: translateY(10px); } }
+.feed-item { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(46,58,110,.6); }
+.feed-item time { color: var(--faint); font-size: .8rem; white-space: nowrap; }
+.empty { padding: 18px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); text-align: center; }
+.tac-row { display: grid; grid-template-columns: auto 1fr 80px 1fr; gap: 8px; align-items: center; }
+@media (max-width: 560px) { .tac-row { grid-template-columns: auto 1fr; } }
+.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 600px) { .timeline { grid-template-columns: 1fr 1fr; } }
+.tl { padding: 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(10,13,28,.45); display: grid; gap: 4px; }
+.tl.now { border-color: var(--sun); box-shadow: 0 0 20px -10px var(--sun); }
+.story { font-size: 1.05rem; max-width: 66ch; color: var(--muted); }
+.story::first-letter { font-family: var(--f-display); font-size: 2.4rem; float: left; line-height: 1; margin: 4px 8px 0 0; color: var(--sun); }
+.intro { position: fixed; inset: 0; z-index: 150; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,207,112,.18), transparent 70%), var(--sky-0); display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 20px); overflow-y: auto; }
+.intro-in { max-width: 680px; width: 100%; display: grid; gap: 18px; text-align: center; justify-items: center; animation: fadeup .6s ease; }
+@keyframes fadeup { from { opacity: 0; transform: translateY(12px); } }
+.intro h2 { font-size: clamp(2rem, 7vw, 3.2rem); color: var(--sun); letter-spacing: .06em; }
+.intro p { font-size: 1.12rem; color: var(--muted); max-width: 56ch; }
+.intro-sils { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.intro-sils .sil { width: 62px; height: 78px; }
+.ladder { display: grid; gap: 6px; width: min(360px, 100%); }
+.ladder div { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(10,13,28,.5); display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; }
+.ladder div:first-child { border-color: rgba(255,95,109,.6); color: var(--hp); }
+.ladder div:last-child { border-color: rgba(255,207,112,.6); color: var(--sun); }
+.goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; width: 100%; text-align: left; }
+.goals > div { padding: 14px; border: 1px solid var(--line); border-radius: var(--r); background: rgba(10,13,28,.5); display: grid; gap: 6px; }
+.intro-dots { display: flex; gap: 8px; }
+.intro-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.intro-dots span.on { background: var(--sun); }
+.tut { border-color: rgba(255,207,112,.45); margin-bottom: 22px; }
+.tut-step { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(46,58,110,.7); }
+.tut-step:last-child { border-bottom: 0; }
+.tick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: .8rem; font-weight: 700; color: var(--sun-ink); }
+.tick.ok { background: var(--good); border-color: var(--good); }
+.tick.claimed { background: var(--sun); border-color: var(--sun); }
+.coach { width: 100%; text-align: center; font-size: .88rem; background: rgba(255,207,112,.1); border: 1px solid rgba(255,207,112,.4); border-radius: 8px; padding: 8px 12px; }
+.howto details { border-bottom: 1px solid var(--line); padding-block: 4px; }
+.howto summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+.howto ul { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 4px; color: var(--muted); }
+.howto b { color: var(--fg); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="hud" id="hud" hidden>
+    <div class="wrap">
+      <div class="hud-in" id="hudIn"></div>
+      <nav class="tabs" id="tabs" role="tablist" aria-label="Seções do jogo"></nav>
+    </div>
+  </header>
+  <main class="wrap" id="view">
+    <section class="hero">
+      <div class="label">Temporada 1 · A Fenda de Sarnak</div>
+      <h1>Zênite</h1>
+      <p>Seis classes, cinco zonas e um topo do mundo em disputa. Crie seu lutador, evolua com quests, trabalho e batalhas, e enfrente seus amigos.</p>
+      <p class="muted small" id="bootMsg">Conectando ao mundo de Zênite…</p>
+    </section>
+  </main>
+</div>
+
+<div class="battle" id="battle" hidden>
+  <div class="b-top">
+    <div class="b-side" id="bA"></div>
+    <div class="b-vs">vs</div>
+    <div class="b-side r" id="bB"></div>
+  </div>
+  <div class="b-stage" id="bStage">
+    <div class="b-f l" id="fA"></div>
+    <div class="b-cards"><div class="card" id="cA"></div><div class="card" id="cB"></div></div>
+    <div class="b-f r" id="fB"></div>
+  </div>
+  <div class="b-log" id="bLog" aria-live="polite"></div>
+  <div class="b-ctrl" id="bCtrl"></div>
+</div>
+<div class="modal" id="modal" hidden><div class="modal-in" id="modalIn"></div></div>
+<div class="intro" id="intro" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+'use strict';
+/* ---------- utilidades ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const NF = new Intl.NumberFormat('pt-BR');
+const fmt = n => NF.format(Math.round(n || 0));
+const rnd = Math.random;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const now = () => Date.now();
+const MIN = 60e3, HOUR = 3600e3, DAY = 864e5;
+const pick = a => a[Math.floor(rnd() * a.length)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clone = o => JSON.parse(JSON.stringify(o));
+function dur(ms) { ms = Math.max(0, ms); const m = Math.ceil(ms / MIN); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); }
+function todayKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function ago(ts) { const d = now() - ts; if (d < MIN) return 'agora'; if (d < HOUR) return Math.floor(d / MIN) + ' min'; if (d < DAY) return Math.floor(d / HOUR) + ' h'; return Math.floor(d / DAY) + ' d'; }
+function code6() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 6; i++) s += c[Math.floor(rnd() * c.length)]; return s; }
+
+const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* opcional */ } } };
+
+/* ---------- temporada ---------- */
+const SEASON_START = new Date('2026-10-10T00:00:00-03:00').getTime();
+const TEST_UNTIL = SEASON_START + 7 * DAY;
+const testMode = () => now() < TEST_UNTIL;
+const timeMult = () => testMode() ? 0.5 : 1;
+const seasonWeek = () => clamp(Math.floor((now() - SEASON_START) / (7 * DAY)) + 1, 1, 6);
+
+/* ---------- regras ---------- */
+const STATS = ['vida', 'forca', 'res', 'ki', 'vel'];
+const STAT = { vida: 'Vida', forca: 'Força', res: 'Resistência', ki: 'Ki', vel: 'Velocidade' };
+const MOLDES = {
+  basico: { ki: 0, mult: 1, label: 'Ataque básico' },
+  rapido: { ki: 10, mult: 1.3, label: 'Rápido' },
+  especial: { ki: 30, mult: 2.5, label: 'Especial' },
+  definitivo: { ki: 60, mult: 4, label: 'Definitivo', lvl: 10 }
+};
+const CLASSES = {
+  devorador: { name: 'Devorador', bonus: { vida: 3, res: 2 }, malus: { vel: -2 }, weak: '−2 Velocidade', passive: 'Fome', pdesc: '12% do dano recebido vira carga (máx. 40), somada ao próximo ataque.',
+    moves: { rapido: { n: ['Dente da Fome', 'Presa Insaciável', 'Banquete Sem Fim'], e: 'Recupera 30% do dano causado como vida' }, especial: { n: ['Eco da Ferida', 'Ferida Devolvida', 'O Mundo Cobra a Conta'], e: 'Soma a carga da Fome em dobro' }, definitivo: { n: ['Gravidade Faminta', 'Boca do Horizonte', 'Devora-Céus'], e: 'Dano extra de 25% da vida que já perdeu' } } },
+  danca: { name: 'Dançarino de Lâminas', bonus: { vel: 3, forca: 2 }, malus: { res: -2 }, weak: '−2 Resistência', passive: 'Ritmo', pdesc: 'Cada ataque seguido causa +20% de dano (máx. +60%). Defender, concentrar ou errar zera.',
+    moves: { rapido: { n: ['Corte Sussurrado', 'Vento de Navalhas', 'Mil Cortes Silenciosos'], e: 'Conta como dois acertos para o Ritmo' }, especial: { n: ['Valsa de Aço', 'Tango Escarlate', 'Baile das Lâminas Vivas'], e: 'Se errar, não zera o Ritmo' }, definitivo: { n: ['Último Compasso', 'Sinfonia Cortante', 'Réquiem de Aço'], e: 'Consome o Ritmo e dobra o bônus dele' } } },
+  batedor: { name: 'Batedor', bonus: { vel: 3, ki: 2 }, malus: { vida: -2 }, weak: '−2 Vida', passive: 'Trilha', pdesc: '+10% de esquiva em combate, expedições 20% mais rápidas e 10% de chance de escapar de saques.',
+    moves: { rapido: { n: ['Passo Relâmpago', 'Rastro Fantasma', 'Antes do Trovão'], e: 'Sempre age primeiro na rodada' }, especial: { n: ['Emboscada da Trilha', 'Caçada Sem Rastro', 'O Chão Sumiu'], e: '+15% de esquiva na rodada seguinte' }, definitivo: { n: ['Flecha Viva', 'Mil Atalhos', 'Fim da Estrada'], e: 'Acerto garantido, ignora esquiva' } } },
+  sentinela: { name: 'Sentinela', bonus: { res: 3, vida: 2 }, malus: { vel: -2 }, weak: '−2 Velocidade', passive: 'Vigília', pdesc: 'Recupera 2,5% da vida máxima a cada rodada em que não está defendendo, enquanto tiver Ki acima de 0.',
+    moves: { rapido: { n: ['Golpe do Escudo', 'Muralha que Avança', 'Portão de Ferro'], e: 'Recebe 20% menos dano na rodada' }, especial: { n: ['Peso da Vigília', 'Marcha Inabalável', 'A Torre Cai Sobre Ti'], e: 'Soma metade da Resistência ao dano' }, definitivo: { n: ['Juramento Firme', 'Noite Sem Fim', 'Guardião Eterno'], e: 'Cura 25% da vida máxima' } } },
+  arauto: { name: 'Arauto do Caos', bonus: { forca: 3, ki: 2 }, malus: { res: -2 }, weak: '−2 Resistência', passive: 'Caos', pdesc: '15% de crítico com dano ×2, mas 10% de chance do especial ou definitivo falhar.',
+    moves: { rapido: { n: ['Faísca Errante', 'Centelha Rebelde', 'Tempestade Sem Dono'], e: 'Dano varia de ×0,5 a ×2' }, especial: { n: ['Riso do Caos', 'Profecia Partida', 'Céu em Pedaços'], e: '+15% de chance de crítico neste golpe' }, definitivo: { n: ['Fim Anunciado', 'Coroa de Ruína', 'O Último Arauto'], e: '25% de chance de dano ×1,5 extra' } } },
+  porta: { name: 'Porta-Estandarte', bonus: { vida: 1, forca: 1, res: 1, ki: 1, vel: 1 }, malus: {}, weak: '−5% de dano lutando sozinho', passive: 'Estandarte', pdesc: '+10% de ouro e XP em quests e lutas. Em chefes de grupo, aliados ganham +10% em status e +15% de ouro.',
+    moves: { rapido: { n: ['Haste Firme', 'Brado da Linha', 'Avante, Todos!'], e: 'Próximo ataque causa +10%' }, especial: { n: ['Estandarte Fincado', 'Bandeira Inquebrável', 'Território Conquistado'], e: 'Alvo causa 15% menos dano por 2 rodadas' }, definitivo: { n: ['Chamado às Armas', 'Hino de Guerra', 'Legião de Um Só'], e: 'Cura 15% da vida' } } }
+};
+const CCOLOR = k => `var(--c-${k || 'npc'})`;
+const SLOTS = { arma: { name: 'Arma', stat: 'forca' }, armadura: { name: 'Armadura', stat: 'res' }, botas: { name: 'Botas', stat: 'vel' }, amuleto: { name: 'Amuleto', stat: 'ki' }, anel: { name: 'Anel', stat: 'vida' } };
+const TIERS = {
+  bronze: { name: 'Bronze', lvl: 1, b: 2, price: 120, rar: 'Comum' },
+  prata: { name: 'Prata', lvl: 10, b: 5, price: 900, mat: { fragmento: 3 }, rar: 'Raro' },
+  ouro: { name: 'Ouro', lvl: 20, b: 10, price: 3000, mat: { nucleo: 1 }, rar: 'Raro' },
+  epico: { name: 'Épico', lvl: 1, b: 7, rar: 'Épico' }
+};
+const LEGENDS = {
+  z1: { name: 'Estandarte de Tarco', slot: 'anel', zone: 1, bonus: { vida: 8, forca: 4 }, desc: '+8 Vida, +4 Força' },
+  z2: { name: 'Eco Eterno', slot: 'botas', zone: 2, bonus: { vel: 8 }, evade: 10, desc: '+8 Velocidade e +10% de esquiva' }
+};
+const CONS = {
+  potP: { name: 'Poção de Vida pequena', price: 40, desc: '+30% da vida máxima' },
+  potG: { name: 'Poção de Vida grande', price: 150, desc: 'Vida cheia' },
+  elixir: { name: 'Elixir de Ki', price: 60, desc: '+40 de Ki na batalha' },
+  racao: { name: 'Ração de Viagem', price: 50, desc: '−15 min em uma expedição' }
+};
+const MATS = { erva: 'Erva', minerio: 'Minério', tecido: 'Tecido', fragmento: 'Fragmento do Desfiladeiro', nucleo: 'Núcleo de chefe', essencia: 'Essência de Desafio' };
+const itemName = k => CONS[k]?.name || MATS[k] || k;
+const COSM = {
+  'faixa-rubra': { name: 'Faixa Rubra', kind: 'faixa', color: '#e2475f', price: 100 },
+  'capa-viajante': { name: 'Capa de Viajante', kind: 'capa', color: '#5b6a9e', price: 150 },
+  'aura-ambar': { name: 'Aura Âmbar', kind: 'aura', color: '#ffcf70', price: 300 },
+  'ombreira-ferro': { name: 'Ombreiras de Ferro', kind: 'ombreira', color: '#9aa4b8', price: 400 },
+  'aura-celeste': { name: 'Aura Celeste', kind: 'aura', color: '#6cc6ff', price: 600 },
+  'capa-noite': { name: 'Capa da Noite', kind: 'capa', color: '#2a2f5c', price: 800 },
+  'aura-rubra': { name: 'Aura Rubra', kind: 'aura', color: '#ff5f6d', price: 1200 },
+  'faixa-dourada': { name: 'Faixa Dourada', kind: 'faixa', color: '#ffcf70', price: 1500 },
+  'moldura-prata': { name: 'Moldura de Prata', kind: 'moldura', color: '#cfd6ea', price: 2000 },
+  'aura-vazio': { name: 'Aura do Vazio', kind: 'aura', color: '#b07cff', price: 3000 },
+  'capa-estrelas': { name: 'Capa das Estrelas', kind: 'capa', color: '#3a4aa8', craft: { tecido: 3 } },
+  'faixa-zenite': { name: 'Faixa do Zênite', kind: 'faixa', color: '#ffe3a3', craft: { tecido: 2 } },
+  'ombreira-bordada': { name: 'Ombreiras Bordadas', kind: 'ombreira', color: '#c3e45f', craft: { tecido: 4 } },
+  'moldura-recrutador': { name: 'Moldura do Recrutador', kind: 'moldura', color: '#63d9a0', prestige: 'Convidar um amigo que chegue ao nível 3' },
+  'aura-desafio': { name: 'Aura do Desafio', kind: 'aura', color: '#ff8c42', prestige: 'Vencer um chefe em Modo Desafio' },
+  'aura-pura': { name: 'Aura Pura', kind: 'aura', color: '#ffffff', prestige: 'Vencer um chefe em Modo Desafio sem usar poção' },
+  'faixa-invicto': { name: 'Faixa do Invicto', kind: 'faixa', color: '#ff5f8f', prestige: 'Vencer 10 duelos seguidos' }
+};
+const PROFS = {
+  mercador: { name: 'Mercador', mult: 1.5, desc: 'Salário ×1,5 e paga 15% menos na loja.' },
+  cozinheiro: { name: 'Cozinheiro', mult: 0.8, desc: 'Produz 1 Poção pequena por hora trabalhada, usando 1 Erva.' },
+  ferreiro: { name: 'Ferreiro', mult: 0.8, desc: 'Forja Bronze com Minério e é o único que cria itens Épicos.' },
+  alfaiate: { name: 'Alfaiate', mult: 0.8, desc: 'Costura roupas e acessórios visuais exclusivos com Tecido.' },
+  mensageiro: { name: 'Mensageiro', mult: 0.8, desc: 'Expedições 25% mais rápidas.' }
+};
+const ENEMIES = {
+  lobo: { name: 'Lobo da Poeira', zone: 1, min: 1, max: 3, moves: ['Mordida', 'Bote', 'Uivo Feroz', 'Matilha'] },
+  bandido: { name: 'Bandido da Estrada', zone: 1, min: 3, max: 5, moves: ['Facada', 'Rasteira', 'Golpe Sujo', 'Emboscada'] },
+  golem: { name: 'Golem de Barro', zone: 1, min: 5, max: 7, moves: ['Soco de Barro', 'Pisão', 'Desabamento', 'Avalanche'] },
+  gaviao: { name: 'Gavião-Tempestade', zone: 1, min: 7, max: 9, moves: ['Bicada', 'Garra', 'Mergulho', 'Raio do Céu'] },
+  morcego: { name: 'Morcego Ecoante', zone: 2, min: 10, max: 12, moves: ['Mordida', 'Grito', 'Onda Sonora', 'Eco Ensurdecedor'] },
+  pedra: { name: 'Sentinela de Pedra', zone: 2, min: 12, max: 15, moves: ['Punho de Rocha', 'Muralha', 'Terremoto', 'Queda de Montanha'] },
+  eremita: { name: 'Eremita Corrompido', zone: 2, min: 15, max: 17, moves: ['Bastão', 'Sussurro', 'Maldição', 'Juízo Final'] },
+  serpente: { name: 'Serpente da Fenda', zone: 2, min: 17, max: 19, moves: ['Bote', 'Veneno', 'Constrição', 'Mordida da Fenda'] }
+};
+const BOSSES = {
+  golemMoinho: { name: 'Golem do Moinho', lvl: 6, zone: 1, moves: ['Pancada', 'Pá de Moinho', 'Moinho Giratório', 'Desmoronar'], drop: { minerio: 2 } },
+  gaviaoAnciao: { name: 'Gavião Ancião', lvl: 9, zone: 1, group: true, moves: ['Garra', 'Vendaval', 'Ciclone', 'Olho da Tempestade'], drop: { tecido: 2 } },
+  tarco: { name: 'Grão-Bandido Tarco', lvl: 10, zone: 1, mech: 'tarco', mechDesc: 'Rouba o Ki de quem concentra na rodada em que ele ataca.', moves: ['Lâmina Torta', 'Rasteira', 'Saque Relâmpago', 'Rei da Estrada'], drop: { minerio: 2 }, zoneBoss: 'z1' },
+  colosso: { name: 'Colosso Rachado', lvl: 16, zone: 2, moves: ['Punho Rachado', 'Pisão', 'Estilhaços', 'Desabar'], drop: { fragmento: 1 } },
+  serpenteMae: { name: 'Serpente-Mãe', lvl: 19, zone: 2, group: true, moves: ['Bote', 'Ninhada', 'Veneno Antigo', 'Abraço da Fenda'], drop: { fragmento: 1 } },
+  maeEco: { name: 'Mãe-Eco', lvl: 20, zone: 2, mech: 'eco', mechDesc: 'Devolve o dano de qualquer golpe repetido em rodadas seguidas.', moves: ['Lamento', 'Ressonância', 'Coro Partido', 'Silêncio Eterno'], drop: { fragmento: 2, nucleo: 1 }, zoneBoss: 'z2' }
+};
+const ZONES = {
+  1: { name: 'Planície do Despertar', range: '1–10', enemies: ['lobo', 'bandido', 'golem', 'gaviao'], desc: 'Campos abertos ao pé do Zênite, onde a energia caída de Sarnak despertou as primeiras criaturas.' },
+  2: { name: 'Desfiladeiro dos Ecos', range: '10–20', enemies: ['morcego', 'pedra', 'eremita', 'serpente'], desc: 'Paredões que repetem cada grito. Aqui a corrupção aprendeu a imitar quem luta.' },
+  3: { name: 'Floresta Rubra', range: '20–30', locked: true },
+  4: { name: 'Cidadela Partida', range: '30–40', locked: true },
+  5: { name: 'Topo do Zênite', range: '40–50', locked: true }
+};
+const QUESTS = [
+  { id: 'z1-despertar', zone: 1, name: 'O Despertar', type: 'historia', lvl: 1, kill: { e: 'lobo', n: 3 }, rw: { xp: 60, gold: 30 }, desc: 'Três lobos rondam a estrada de Mirante. Mostre a que veio.' },
+  { id: 'z1-carta', zone: 1, name: 'Carta ao Ferreiro', type: 'entrega', lvl: 1, min: 10, rw: { xp: 40, gold: 50 }, desc: 'Leve a encomenda do mensageiro até a forja da vila.' },
+  { id: 'z1-ervas', zone: 1, name: 'Ervas da Planície', type: 'coleta', lvl: 2, min: 15, rep: true, rw: { xp: 40, items: { erva: 3 } }, desc: 'Ervas para os cozinheiros de Mirante.' },
+  { id: 'z1-minerio', zone: 1, name: 'Veio de Minério', type: 'coleta', lvl: 3, min: 20, rep: true, rw: { xp: 40, items: { minerio: 2, tecido: 1 } }, desc: 'Minério e lã crua das colinas.' },
+  { id: 'z1-estrada', zone: 1, name: 'Estrada Segura', type: 'caca', lvl: 3, kill: { e: 'bandido', n: 5 }, rw: { xp: 200, gold: 100, drop: 1 }, desc: 'Os bandidos atacam quem sobe para o Zênite.' },
+  { id: 'z1-ruinas', zone: 1, name: 'Ruínas Rasas', type: 'expedicao', lvl: 4, min: 60, rep: true, rw: { xp: 300, drop: 1 }, desc: 'Ruínas antigas, meio enterradas na planície.' },
+  { id: 'z1-noite', zone: 1, name: 'Vigília na Planície', type: 'expedicao', night: true, lvl: 5, min: 480, rep: true, rw: { xp: 600, gold: 300, drop: 2 }, desc: 'Expedição noturna. Recompensa maior, emboscada mais difícil.' },
+  { id: 'z1-golem', zone: 1, name: 'O Golem do Moinho', type: 'chefe', lvl: 6, req: ['z1-estrada'], boss: 'golemMoinho', rw: { xp: 500, gold: 250, equip: { arma: 'bronze' } }, desc: 'O moinho velho ganhou vida.' },
+  { id: 'z1-travessia', zone: 1, name: 'Travessia Longa', type: 'expedicao', lvl: 7, min: 240, rep: true, rw: { xp: 800, points: 1 }, desc: 'Atravesse a planície inteira até o pé do desfiladeiro.' },
+  { id: 'z1-ninho', zone: 1, name: 'Ninho do Gavião', type: 'grupo', lvl: 8, boss: 'gaviaoAnciao', rw: { xp: 700, gold: 300 }, desc: 'Chefe para 2 ou 3 jogadores, com vida compartilhada.' },
+  { id: 'z1-tarco', zone: 1, name: 'Queda de Tarco', type: 'chefe', lvl: 10, req: ['z1-golem'], boss: 'tarco', rw: { xp: 1500, gold: 600, title: 'Libertador da Planície', unlock: 2 }, desc: 'O chefe dos bandidos guarda a passagem para o desfiladeiro.' },
+  { id: 'z2-ecos1', zone: 2, name: 'Ecos Perdidos I', type: 'historia', lvl: 10, kill: { e: 'morcego', n: 3 }, rw: { xp: 300, gold: 120 }, desc: 'Os morcegos repetem vozes de lutadores que nunca voltaram.' },
+  { id: 'z2-ecos2', zone: 2, name: 'Ecos Perdidos II', type: 'entrega', lvl: 10, req: ['z2-ecos1'], min: 20, rw: { xp: 250, gold: 150 }, desc: 'Leve a mensagem ao eremita da encosta.' },
+  { id: 'z2-ecos3', zone: 2, name: 'Ecos Perdidos III', type: 'historia', lvl: 12, req: ['z2-ecos2'], kill: { e: 'pedra', n: 4 }, rw: { xp: 600, gold: 250 }, desc: 'As sentinelas de pedra fecham o caminho do eremita.' },
+  { id: 'z2-ecos4', zone: 2, name: 'Ecos Perdidos IV', type: 'historia', lvl: 15, req: ['z2-ecos3'], kill: { e: 'eremita', n: 3 }, rw: { xp: 900, gold: 350 }, desc: 'O eremita foi corrompido. E não estava sozinho.' },
+  { id: 'z2-cristais', zone: 2, name: 'Cristais do Eco', type: 'coleta', lvl: 10, min: 30, rep: true, rw: { xp: 120, items: { minerio: 3, tecido: 1 } }, desc: 'Minério que vibra quando alguém fala perto.' },
+  { id: 'z2-musgo', zone: 2, name: 'Musgo do Desfiladeiro', type: 'coleta', lvl: 11, min: 45, rep: true, rw: { xp: 150, items: { erva: 4, tecido: 2 } }, desc: 'Musgo e fibras das paredes úmidas.' },
+  { id: 'z2-silencio', zone: 2, name: 'Silêncio nas Pedras', type: 'caca', lvl: 12, kill: { e: 'pedra', n: 6 }, rw: { xp: 800, gold: 300 }, desc: 'Derrube as sentinelas da trilha principal.' },
+  { id: 'z2-trilha', zone: 2, name: 'Trilha dos Ecos', type: 'expedicao', lvl: 11, min: 120, rep: true, rw: { xp: 900, drop: 1 }, desc: 'Percorra a trilha estreita do paredão.' },
+  { id: 'z2-noite', zone: 2, name: 'Noite no Desfiladeiro', type: 'expedicao', night: true, lvl: 13, min: 480, rep: true, rw: { xp: 1500, gold: 600, drop: 2 }, desc: 'Expedição noturna. Recompensa maior, emboscada mais difícil.' },
+  { id: 'z2-fundo', zone: 2, name: 'Fundo do Desfiladeiro', type: 'expedicao', lvl: 14, min: 360, rep: true, rw: { xp: 2000, points: 1 }, desc: 'Desça até onde a luz não chega.' },
+  { id: 'z2-colosso', zone: 2, name: 'O Colosso Rachado', type: 'chefe', lvl: 15, req: ['z2-silencio'], boss: 'colosso', rw: { xp: 1500, gold: 500, items: { fragmento: 1 } }, desc: 'Um gigante de pedra, rachado pela energia de Sarnak.' },
+  { id: 'z2-escamas', zone: 2, name: 'Escamas da Fenda', type: 'caca', lvl: 17, kill: { e: 'serpente', n: 5 }, rw: { xp: 1200, gold: 450 }, desc: 'As serpentes saem da própria Fenda.' },
+  { id: 'z2-covil', zone: 2, name: 'Covil da Serpente-Mãe', type: 'grupo', lvl: 18, boss: 'serpenteMae', rw: { xp: 2000, gold: 700, items: { fragmento: 1 } }, desc: 'Chefe para 2 ou 3 jogadores, com vida compartilhada.' },
+  { id: 'z2-maeeco', zone: 2, name: 'A Mãe-Eco', type: 'chefe', lvl: 20, req: ['z2-colosso', 'z2-ecos4'], boss: 'maeEco', rw: { xp: 4500, gold: 1800, items: { fragmento: 2, nucleo: 1 }, title: 'Silenciador dos Ecos' }, desc: 'A voz que comanda o desfiladeiro.' }
+];
+const QMAP = Object.fromEntries(QUESTS.map(q => [q.id, q]));
+const TYPE_LABEL = { historia: 'História', caca: 'Caça', coleta: 'Coleta', entrega: 'Entrega', expedicao: 'Expedição', chefe: 'Chefe', grupo: 'Grupo' };
+const DROPS = ['potP', 'potP', 'elixir', 'racao', 'erva', 'minerio', 'tecido', 'potG'];
+const DEFAULT_TACTIC = [
+  { c: 'hpBelow', v: 30, a: 'def' },
+  { c: 'defReady', v: 0, a: 'definitivo' },
+  { c: 'kiAtLeast', v: 30, a: 'especial' },
+  { c: 'always', v: 0, a: 'basico' }
+];
+const TAC_COND = { hpBelow: 'Minha vida abaixo de %', kiAtLeast: 'Meu Ki pelo menos', defReady: 'Definitivo disponível', enemyHpBelow: 'Vida do inimigo abaixo de %', always: 'Sempre' };
+const TAC_ACT = { basico: 'Ataque básico', rapido: 'Golpe rápido', especial: 'Especial', definitivo: 'Definitivo', def: 'Defender', conc: 'Concentrar', potP: 'Poção pequena' };
+
+/* ---------- derivações do jogador ---------- */
+function totals(p) {
+  const t = {};
+  STATS.forEach(k => t[k] = (p.stats?.[k] ?? 10));
+  const c = CLASSES[p.cls];
+  if (c) { for (const k in c.bonus) t[k] += c.bonus[k]; for (const k in c.malus) t[k] += c.malus[k]; }
+  for (const s in (p.equip || {})) {
+    const it = p.equip[s]; if (!it) continue;
+    if (it.tier === 'lendario') { const L = LEGENDS[it.id]; if (L) for (const k in L.bonus) t[k] += L.bonus[k]; }
+    else if (TIERS[it.tier]) t[SLOTS[s].stat] += TIERS[it.tier].b;
+  }
+  return t;
+}
+const hpFormula = (vida, lvl) => 40 + vida * 6 + (lvl || 1) * 20;
+const hpMaxOf = p => hpFormula(totals(p).vida, p.level);
+const kiMaxOf = p => 30 + totals(p).ki * 5;
+function curHp(p) { const m = hpMaxOf(p); return clamp((p.hp ?? m) + m * 0.2 * (now() - (p.hpAt || now())) / HOUR, 0, m); }
+const power = p => { const t = totals(p); return Math.round(STATS.reduce((s, k) => s + t[k], 0) + (p.level || 1) * 5); };
+const xpNeed = lvl => 60 * lvl;
+const stageOf = u => u >= 100 ? 3 : u >= 30 ? 2 : 1;
+function moveInfo(cls, key, uses) { const c = CLASSES[cls]; const st = stageOf(uses || 0); return { name: c.moves[key].n[st - 1], stage: st, eff: c.moves[key].e, uses: uses || 0 }; }
+const isWorking = p => p.job && now() < p.job.endsAt;
+const isRecovering = p => (p.recoverUntil || 0) > now();
+const vaultProt = p => [0, 0.2, 0.4, 0.6][p.vault || 0];
+const exposedGold = p => Math.floor((p.gold || 0) * (1 - vaultProt(p)));
+function discount(p) { return p.prof === 'mercador' ? 0.85 : 1; }
+function daily(p) { const k = todayKey(); if (!p.daily || p.daily.date !== k) p.daily = { date: k, wins: 0, kills: 0, exps: 0, claimed: [] }; return p.daily; }
+function zoneUnlocked(p, z) { return z === 1 || (z === 2 && (p.done || []).includes('z1-tarco')); }
+
+/* ---------- combate ---------- */
+function fighterFromPlayer(p, o = {}) {
+  const t = totals(p); const sm = o.statMult || 1;
+  const hpM = Math.round(hpFormula(t.vida, p.level) * sm); const kiM = 30 + t.ki * 5;
+  const moves = {};
+  ['rapido', 'especial', 'definitivo'].forEach(k => { const mi = moveInfo(p.cls, k, p.uses?.[k]); moves[k] = { name: mi.name, stage: mi.stage }; });
+  const legEvade = p.equip?.botas?.tier === 'lendario' && p.equip.botas.id === 'z2' ? 10 : 0;
+  return {
+    id: p.uid, name: p.name, cls: p.cls, lvl: p.level, isNpc: false,
+    hpMax: hpM, hp: o.fullHp ? hpM : Math.max(1, Math.round(curHp(p) * sm)), kiMax: kiM, ki: kiM,
+    str: t.forca * sm, res: t.res * sm, vel: t.vel * sm, extraEvade: legEvade, kiSteal: p.equip?.arma?.tier === 'epico',
+    moves, tactic: clone(p.tactic || DEFAULT_TACTIC), inv: o.items ? { potP: p.inv?.potP || 0, potG: p.inv?.potG || 0, elixir: p.inv?.elixir || 0 } : { potP: 0, potG: 0, elixir: 0 },
+    allowItems: !!o.items, solo: o.solo !== false, dmgMult: o.revenge ? 1.1 : 1,
+    carga: 0, ritmo: 0, defUsed: false, buffNext: 0, debuffRounds: 0, debuffVal: 0, evadeNext: 0, evadeNow: 0, lastMove: null, used: {}, usedPotion: false, cos: p.cos || {}
+  };
+}
+function npcFighter(name, lvl, o = {}) {
+  const per = (10 + (15 + 3 * (lvl - 1)) / 5) * 0.9 * (o.boss ? 1.12 : 1) * (o.desafio ? 1.25 : 1) * (o.hard ? 1.15 : 1);
+  let hpM = Math.round(hpFormula(per, lvl) * (o.boss ? 1.5 : 1) * (o.desafio ? 1.3 : 1) * (o.hpMult || 1));
+  const moves = { rapido: { name: o.moves?.[1] || 'Investida', stage: 1 }, especial: { name: o.moves?.[2] || 'Fúria', stage: 1 }, definitivo: { name: o.moves?.[3] || 'Golpe Final', stage: 1 } };
+  return { id: 'npc', name, cls: null, lvl, isNpc: true, hpMax: hpM, hp: o.hp != null ? o.hp : hpM, kiMax: 30 + per * 5, ki: 30 + per * 5, str: per, res: per, vel: per, extraEvade: 0, moves, mech: o.mech || null, basicName: o.moves?.[0] || 'Ataque', inv: { potP: 0, potG: 0, elixir: 0 }, solo: true, dmgMult: 1, carga: 0, ritmo: 0, defUsed: false, buffNext: 0, debuffRounds: 0, debuffVal: 0, evadeNext: 0, evadeNow: 0, lastMove: null, used: {} };
+}
+function canMove(F, m) { if (m === 'definitivo') return !F.defUsed && F.lvl >= 10 && F.ki >= 60; return F.ki >= MOLDES[m].ki; }
+function tacticChoice(F, O) {
+  for (const r of (F.tactic || DEFAULT_TACTIC)) {
+    let ok = false;
+    if (r.c === 'always') ok = true;
+    else if (r.c === 'hpBelow') ok = F.hp / F.hpMax * 100 < r.v;
+    else if (r.c === 'kiAtLeast') ok = F.ki >= r.v;
+    else if (r.c === 'defReady') ok = canMove(F, 'definitivo');
+    else if (r.c === 'enemyHpBelow') ok = O.hp / O.hpMax * 100 < r.v;
+    if (!ok) continue;
+    const a = r.a;
+    if (a === 'def' || a === 'conc') return { k: a };
+    if (a === 'potP') { if (F.allowItems && F.inv.potP > 0) return { k: 'item', i: 'potP' }; continue; }
+    if (MOLDES[a] && canMove(F, a)) return { k: 'atk', m: a };
+  }
+  return { k: 'atk', m: 'basico' };
+}
+function npcChoice(F) {
+  const r = rnd();
+  if (F.hp / F.hpMax < 0.25 && r < 0.3) return { k: 'def' };
+  if (canMove(F, 'definitivo') && r < 0.7) return { k: 'atk', m: 'definitivo' };
+  if (F.ki >= 30 && r < 0.55) return { k: 'atk', m: 'especial' };
+  if (F.ki < 15 && r < 0.25) return { k: 'conc' };
+  if (F.ki >= 10 && r < 0.75) return { k: 'atk', m: 'rapido' };
+  return { k: 'atk', m: 'basico' };
+}
+function chooseFor(F, O) { return F.isNpc ? npcChoice(F) : tacticChoice(F, O); }
+function moveName(F, m) { if (m === 'basico') return F.isNpc ? F.basicName : 'Ataque básico'; return F.moves[m].name; }
+function actLabel(F, a) {
+  if (a.k === 'def') return 'Defender'; if (a.k === 'conc') return 'Concentrar'; if (a.k === 'item') return itemName(a.i);
+  return moveName(F, a.m);
+}
+function snap(A, B) { return { A: { hp: Math.max(0, Math.round(A.hp)), ki: Math.round(A.ki), hpMax: A.hpMax, kiMax: Math.round(A.kiMax) }, B: { hp: Math.max(0, Math.round(B.hp)), ki: Math.round(B.ki), hpMax: B.hpMax, kiMax: Math.round(B.kiMax) } }; }
+function normAct(F, a) {
+  a = a || { k: 'atk', m: 'basico' };
+  if (a.k === 'item' && !(F.allowItems && F.inv[a.i] > 0)) return { k: 'atk', m: 'basico' };
+  if (a.k === 'atk') { if (!MOLDES[a.m]) return { k: 'atk', m: 'basico' }; if (!canMove(F, a.m)) return { k: 'atk', m: 'basico' }; }
+  return a;
+}
+function resolveRound(A, B, actA, actB, ctx) {
+  const ev = []; ctx.round = (ctx.round || 0) + 1;
+  const push = e => { e.st = snap(A, B); ev.push(e); };
+  const side = F => F === A ? 'A' : 'B';
+  const aA = normAct(A, actA), aB = normAct(B, actB);
+  A.cur = aA; B.cur = aB;
+  push({ t: 'round', n: ctx.round });
+  push({ t: 'cards', a: actLabel(A, aA), b: actLabel(B, aB) });
+  for (const [F, a] of [[A, aA], [B, aB]]) {
+    F.defending = a.k === 'def'; F.conc = a.k === 'conc';
+    F.shield = (F.cls === 'sentinela' && a.k === 'atk' && a.m === 'rapido') ? 0.2 * (F.moves.rapido.stage === 3 ? 1.5 : 1) : 0;
+    if (a.k !== 'atk' && F.cls === 'danca') F.ritmo = 0;
+  }
+  const entries = [[A, B, aA], [B, A, aB]];
+  const prio = x => (x[0].cls === 'batedor' && x[2].k === 'atk' && x[2].m === 'rapido') ? 1 : 0;
+  entries.sort((x, y) => (prio(y) - prio(x)) || (y[0].vel - x[0].vel) || (rnd() - 0.5));
+  for (const [F, O, a] of entries) {
+    if (F.hp <= 0 || O.hp <= 0) continue;
+    const s = side(F);
+    if (a.k === 'def') { push({ t: 'def', who: s, txt: `${F.name} assume a guarda.` }); continue; }
+    if (a.k === 'conc') { push({ t: 'conc', who: s, txt: `${F.name} concentra energia.` }); continue; }
+    if (a.k === 'item') {
+      F.inv[a.i]--; F.usedPotion = true;
+      if (a.i === 'potP') { const h = Math.round(F.hpMax * 0.3); F.hp = Math.min(F.hpMax, F.hp + h); push({ t: 'heal', who: s, amt: h, txt: `${F.name} bebe uma poção (+${h} de vida).` }); }
+      else if (a.i === 'potG') { const h = Math.round(F.hpMax - F.hp); F.hp = F.hpMax; push({ t: 'heal', who: s, amt: h, txt: `${F.name} bebe uma poção grande (+${h} de vida).` }); }
+      else if (a.i === 'elixir') { F.ki = Math.min(F.kiMax, F.ki + 40); push({ t: 'conc', who: s, txt: `${F.name} toma um Elixir de Ki (+40 de Ki).` }); }
+      continue;
+    }
+    attack(F, O, a.m, s, side(O), push);
+  }
+  for (const [F, O] of [[A, B], [B, A]]) {
+    if (F.hp <= 0) continue;
+    if (F.cls === 'sentinela' && F.ki > 0 && !F.defending && F.hp < F.hpMax) { const h = Math.round(F.hpMax * 0.025); F.hp = Math.min(F.hpMax, F.hp + h); push({ t: 'heal', who: side(F), amt: h, quiet: true, txt: `Vigília: ${F.name} recupera ${h}.` }); }
+    let gain = 5; if (F.defending) gain += 10;
+    if (F.conc) {
+      if (O.mech === 'tarco' && O.cur && O.cur.k === 'atk' && O.hp > 0) { O.ki = Math.min(O.kiMax, O.ki + 35); push({ t: 'steal', who: side(O), txt: `${O.name} rouba o Ki concentrado de ${F.name}!` }); }
+      else gain += 35;
+    }
+    F.ki = Math.min(F.kiMax, F.ki + gain);
+    F.evadeNow = F.evadeNext; F.evadeNext = 0;
+    if (F.debuffRounds > 0) F.debuffRounds--;
+  }
+  let winner = null;
+  if (A.hp <= 0 || B.hp <= 0) winner = A.hp <= 0 && B.hp <= 0 ? (rnd() < 0.5 ? 'A' : 'B') : (A.hp <= 0 ? 'B' : 'A');
+  else if (ctx.round >= (ctx.maxRounds || 15)) winner = (A.hp / A.hpMax) >= (B.hp / B.hpMax) ? 'A' : 'B';
+  if (winner) { ctx.winner = winner; push({ t: 'end', winner, byTime: !(A.hp <= 0 || B.hp <= 0), txt: (ctx.limitTxt && !(A.hp <= 0 || B.hp <= 0)) ? ctx.limitTxt : `${(winner === 'A' ? A : B).name} vence a luta!` }); }
+  else push({ t: 'state' });
+  return ev;
+}
+function attack(F, O, m, s, so, push) {
+  if (!canMove(F, m)) m = 'basico';
+  F.ki -= MOLDES[m].ki; if (m === 'definitivo') F.defUsed = true;
+  const stage = m === 'basico' ? 1 : (F.moves[m]?.stage || 1); const e = stage === 3 ? 1.5 : 1;
+  const name = moveName(F, m);
+  if (!F.isNpc && m !== 'basico') F.used[m] = (F.used[m] || 0) + 1;
+  const big = m === 'definitivo';
+  if (F.cls === 'arauto' && (m === 'especial' || m === 'definitivo') && rnd() < 0.10) { F.lastMove = m; push({ t: 'fail', who: s, move: name, big, txt: `${name} sai do controle e falha!` }); return; }
+  const repeated = O.mech === 'eco' && m !== 'basico' && F.lastMove === m;
+  F.lastMove = m;
+  // heals por uso
+  if (F.cls === 'sentinela' && m === 'definitivo') { const h = Math.round(F.hpMax * 0.25 * e); F.hp = Math.min(F.hpMax, F.hp + h); push({ t: 'heal', who: s, amt: h, quiet: true, txt: `${F.name} recupera ${h} de vida.` }); }
+  if (F.cls === 'porta' && m === 'definitivo') { const h = Math.round(F.hpMax * 0.15 * e); F.hp = Math.min(F.hpMax, F.hp + h); push({ t: 'heal', who: s, amt: h, quiet: true, txt: `${F.name} recupera ${h} de vida.` }); }
+  let evade = clamp(5 + (O.vel - F.vel) * 3, 0, 35) + (O.extraEvade || 0) + (O.evadeNow || 0) + (O.cls === 'batedor' ? 10 : 0);
+  if (m === 'rapido') evade /= 2;
+  if (F.cls === 'batedor' && m === 'definitivo') evade = 0;
+  if (rnd() * 100 < evade) {
+    if (F.cls === 'danca' && !(m === 'especial')) F.ritmo = 0;
+    push({ t: 'atk', who: s, move: name, m, big, miss: true, txt: `${F.name} usa ${name}, mas ${O.name} esquiva.` }); return;
+  }
+  let raw = F.str * 2 * MOLDES[m].mult * [1, 1.1, 1.2][stage - 1];
+  let variance = 0.9 + rnd() * 0.2;
+  if (F.cls === 'arauto' && m === 'rapido') variance = 0.5 + rnd() * 1.5;
+  raw *= variance;
+  if (F.cls === 'danca') {
+    if (m === 'definitivo') { raw *= 1 + Math.min(F.ritmo, 3) * 0.2 * 2 * e; F.ritmo = 0; }
+    else { raw *= 1 + Math.min(F.ritmo, 3) * 0.2; F.ritmo = Math.min(3, F.ritmo + (m === 'rapido' ? (stage === 3 ? 3 : 2) : 1)); }
+  }
+  if (F.cls === 'devorador') {
+    if (m === 'especial') raw += F.carga * 2 * e; else raw += F.carga;
+    F.carga = 0;
+    if (m === 'definitivo') raw += 0.25 * e * (F.hpMax - F.hp);
+  }
+  if (F.cls === 'sentinela' && m === 'especial') raw += 0.5 * e * F.res;
+  let chaos = false;
+  if (F.cls === 'arauto' && m === 'definitivo' && rnd() < 0.25 * e) { raw *= 1.5; chaos = true; }
+  if (F.buffNext) { raw *= 1 + F.buffNext; F.buffNext = 0; }
+  if (F.debuffRounds > 0) raw *= 1 - F.debuffVal;
+  raw *= F.dmgMult || 1;
+  if (F.cls === 'porta' && F.solo) raw *= 0.95;
+  let critCh = (F.cls === 'arauto' ? 15 : 5) + Math.max(0, F.vel - O.vel); if (F.cls === 'arauto' && m === 'especial') critCh += 15 * e;
+  const crit = rnd() * 100 < critCh;
+  if (crit) raw *= F.cls === 'arauto' ? 2 : 1.5;
+  let dmg = raw - O.res * 0.8;
+  if (O.defending) dmg *= 0.5;
+  if (O.conc) dmg *= 1.2;
+  if (O.shield) dmg *= 1 - O.shield;
+  dmg = Math.max(5, Math.round(dmg));
+  if (repeated) {
+    F.hp -= dmg;
+    push({ t: 'reflect', who: s, move: name, m, big, dmg, txt: `${O.name} devolve ${name}! ${F.name} sofre ${dmg} de dano.` });
+    return;
+  }
+  O.hp -= dmg;
+  if (O.cls === 'devorador') O.carga = Math.min(40, O.carga + dmg * 0.12);
+  let extra = '';
+  if (F.cls === 'devorador' && m === 'rapido') { const h = Math.round(dmg * 0.3 * e); F.hp = Math.min(F.hpMax, F.hp + h); extra = ` e recupera ${h}`; }
+  if (F.cls === 'porta' && m === 'rapido') F.buffNext = 0.10 * e;
+  if (F.cls === 'porta' && m === 'especial') { O.debuffRounds = 2; O.debuffVal = 0.15 * e; }
+  if (F.cls === 'batedor' && m === 'especial') F.evadeNext = 15 * e;
+  if (F.kiSteal) F.ki = Math.min(F.kiMax, F.ki + 5);
+  push({ t: 'atk', who: s, move: name, m, big, dmg, crit, chaos, txt: `${F.name} usa ${name}${crit ? ' — crítico!' : ''}${chaos ? ' O caos explode!' : ''} ${dmg} de dano${extra}.` });
+}
+function runAuto(A, B, ctx = {}) {
+  const events = [];
+  while (!ctx.winner) {
+    const ev = resolveRound(A, B, chooseFor(A, B), chooseFor(B, A), ctx);
+    events.push(...ev);
+    if (ctx.round > 40) break;
+  }
+  return { winner: ctx.winner, events };
+}
+
+/* ---------- silhuetas ---------- */
+function silSVG(cls, cos = {}, o = {}) {
+  const col = o.npc ? 'var(--c-npc)' : CCOLOR(cls);
+  const aura = cos.aura && COSM[cos.aura] ? COSM[cos.aura].color : null;
+  const capa = cos.capa && COSM[cos.capa] ? COSM[cos.capa].color : null;
+  const faixa = cos.faixa && COSM[cos.faixa] ? COSM[cos.faixa].color : null;
+  const omb = cos.ombreira && COSM[cos.ombreira] ? COSM[cos.ombreira].color : null;
+  const gid = 'g' + Math.random().toString(36).slice(2, 8);
+  let weapon = '';
+  if (o.npc) {
+    return `<svg class="sil" viewBox="0 0 120 150" aria-hidden="true"><defs><radialGradient id="${gid}" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="${col}" stop-opacity=".55"/><stop offset="1" stop-color="${col}" stop-opacity=".12"/></radialGradient></defs><ellipse cx="60" cy="140" rx="40" ry="6" fill="#000" opacity=".45"/><path d="M20 135 C14 95 26 52 60 46 C94 52 106 95 100 135 Z" fill="url(#${gid})" stroke="${col}" stroke-width="2"/><path d="M34 60 L24 30 L46 52 M86 60 L96 30 L74 52" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round"/><circle cx="48" cy="78" r="4.5" fill="#ffe6a0"/><circle cx="72" cy="78" r="4.5" fill="#ffe6a0"/><path d="M44 100 Q60 110 76 100" fill="none" stroke="${col}" stroke-width="2.5"/></svg>`;
+  }
+  switch (cls) {
+    case 'devorador': weapon = `<circle cx="22" cy="92" r="11" fill="${col}" opacity=".85"/><circle cx="98" cy="92" r="11" fill="${col}" opacity=".85"/>`; break;
+    case 'danca': weapon = `<path d="M24 92 Q6 66 18 40" fill="none" stroke="${col}" stroke-width="3.5" stroke-linecap="round"/><path d="M96 92 Q114 66 102 40" fill="none" stroke="${col}" stroke-width="3.5" stroke-linecap="round"/>`; break;
+    case 'batedor': weapon = `<path d="M100 40 Q122 80 100 120" fill="none" stroke="${col}" stroke-width="3"/><line x1="100" y1="40" x2="100" y2="120" stroke="${col}" stroke-width="1" opacity=".7"/>`; break;
+    case 'sentinela': weapon = `<path d="M84 66 h26 v34 q0 18 -13 26 q-13 -8 -13 -26 Z" fill="${col}" opacity=".8" stroke="${col}" stroke-width="2"/>`; break;
+    case 'arauto': weapon = `<polyline points="98,118 106,96 96,88 108,64 98,56 110,30" fill="none" stroke="${col}" stroke-width="3.5" stroke-linejoin="round"/><circle cx="112" cy="28" r="3" fill="${col}"/><circle cx="104" cy="22" r="2" fill="${col}"/>`; break;
+    case 'porta': weapon = `<line x1="102" y1="128" x2="102" y2="14" stroke="${col}" stroke-width="3"/><path d="M102 16 h-0 l-0 0 L74 22 L80 32 L74 42 L102 46 Z" fill="${col}" opacity=".85"/>`; break;
+  }
+  const wide = cls === 'devorador' ? 8 : 0;
+  return `<svg class="sil" viewBox="0 0 120 150" aria-hidden="true" style="--fc:${col}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".6"/><stop offset="1" stop-color="${col}" stop-opacity=".15"/></linearGradient>${aura ? `<radialGradient id="${gid}a" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="${aura}" stop-opacity=".55"/><stop offset="1" stop-color="${aura}" stop-opacity="0"/></radialGradient>` : ''}</defs>
+  ${aura ? `<ellipse cx="60" cy="80" rx="58" ry="72" fill="url(#${gid}a)"/>` : ''}
+  <ellipse cx="60" cy="142" rx="34" ry="5" fill="#000" opacity=".45"/>
+  ${capa ? `<path d="M40 48 L28 132 Q60 140 92 132 L80 48 Z" fill="${capa}" opacity=".9"/>` : ''}
+  <line x1="50" y1="104" x2="44" y2="138" stroke="${col}" stroke-width="7" stroke-linecap="round"/><line x1="70" y1="104" x2="76" y2="138" stroke="${col}" stroke-width="7" stroke-linecap="round"/>
+  <path d="M${42 - wide} 50 Q60 42 ${78 + wide} 50 L${74 + wide / 2} 106 L${46 - wide / 2} 106 Z" fill="url(#${gid})" stroke="${col}" stroke-width="2"/>
+  <line x1="${42 - wide}" y1="54" x2="${24}" y2="90" stroke="${col}" stroke-width="6" stroke-linecap="round"/><line x1="${78 + wide}" y1="54" x2="96" y2="90" stroke="${col}" stroke-width="6" stroke-linecap="round"/>
+  ${omb ? `<ellipse cx="${40 - wide}" cy="52" rx="9" ry="5" fill="${omb}"/><ellipse cx="${80 + wide}" cy="52" rx="9" ry="5" fill="${omb}"/>` : ''}
+  <circle cx="60" cy="32" r="13" fill="url(#${gid})" stroke="${col}" stroke-width="2"/>
+  ${faixa ? `<rect x="46" y="27" width="28" height="5" rx="2" fill="${faixa}"/><path d="M74 29 l10 4 l-9 2" fill="${faixa}"/>` : ''}
+  ${weapon}</svg>`;
+}
+
+/* ---------- estado ---------- */
+let db = null, me = null, myRef = null;
+let P = null; // meu jogador
+const players = new Map();
+let feed = [], duelsA = [], duelsB = [], banca = [], world = { lendarios: {}, groups: {} };
+let tab = 'lutador', zoneSel = 1, booted = false, battleOpen = false, soundOn = false;
+let writeQ = Promise.resolve();
+let selStats = null; // criação
+let editingTactic = null;
+
+function toast(msg, kind = '') {
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+function save(mut, opts = {}) {
+  writeQ = writeQ.then(async () => {
+    if (!P) return;
+    const p = clone(P); const res = mut(p);
+    if (res === false) return;
+    P = p; players.set(me, p);
+    if (!opts.silent) render();
+    try { await myRef.set(p); } catch (e) { handleErr(e); }
+  }).catch(handleErr);
+  return writeQ;
+}
+function handleErr(e) {
+  console.error(e);
+  if (e && e.code === 'invalid_argument') toast('Não foi possível salvar: o registro não existe mais. Recarregue a página.', 'bad');
+  else if (e && e.code === 'auth') toast('Sua sessão expirou. Entre de novo.', 'bad');
+  else if (e && e.code === 'quota_exceeded') toast('O mundo de Zênite atingiu o limite de dados. Avise o dono do jogo.', 'bad');
+  else toast('Não foi possível salvar agora. Tente de novo em instantes.', 'bad');
+}
+async function post(text, kind = 'info') { try { await db.collection('feed').add({ ts: now(), text, kind }); } catch (e) { console.warn(e); } }
+
+/* ---------- recompensas ---------- */
+function grant(p, rw, o = {}) {
+  const out = []; const pb = p.cls === 'porta' && o.quest !== false ? 1.1 : 1;
+  let xp = Math.round((rw.xp || 0) * pb * (o.mult || 1)); let gold = Math.round((rw.gold || 0) * pb * (o.mult || 1));
+  if (gold) { p.gold = (p.gold || 0) + gold; out.push(`${fmt(gold)} de ouro`); }
+  if (rw.items) for (const k in rw.items) { p.inv[k] = (p.inv[k] || 0) + rw.items[k]; out.push(`${rw.items[k]}× ${itemName(k)}`); }
+  for (let i = 0; i < (rw.drop || 0); i++) { const k = pick(DROPS); p.inv[k] = (p.inv[k] || 0) + 1; out.push(`1× ${itemName(k)}`); }
+  if (rw.points) { p.points = (p.points || 0) + rw.points; out.push(`+${rw.points} ponto de status`); }
+  if (rw.equip) for (const s in rw.equip) { if (!p.equip[s] || (TIERS[p.equip[s].tier]?.b || 0) < TIERS[rw.equip[s]].b) { p.equip[s] = { tier: rw.equip[s] }; out.push(`${SLOTS[s].name} ${TIERS[rw.equip[s]].name}`); } }
+  if (rw.title && !p.titles.includes(rw.title)) { p.titles.push(rw.title); out.push(`título "${rw.title}"`); if (!p.title) p.title = rw.title; }
+  if (rw.cos && !p.cos.owned.includes(rw.cos)) { p.cos.owned.push(rw.cos); out.push(COSM[rw.cos].name); }
+  if (xp) { out.unshift(`${fmt(xp)} XP`); addXp(p, xp); }
+  return out;
+}
+function addXp(p, xp) {
+  if (p.level >= 50) return;
+  p.xp += xp;
+  while (p.level < 50 && p.xp >= xpNeed(p.level)) {
+    p.xp -= xpNeed(p.level); p.level++; p.points = (p.points || 0) + 3;
+    p.hp = hpMaxOf(p); p.hpAt = now();
+    pendingFx.push(() => { toast(`Nível ${p.level}! +3 pontos de status.`, 'good'); post(`${p.name} chegou ao nível ${p.level}.`, 'level'); });
+    if (p.level >= 3 && p.invitedBy && !p.inviteRewarded) { p.inviteRewarded = true; const inv = p.invitedBy; pendingFx.push(() => rewardInviter(inv, p.name)); }
+  }
+}
+let pendingFx = [];
+function flushFx() { const f = pendingFx; pendingFx = []; f.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } }); }
+async function rewardInviter(uid, name) {
+  const q = players.get(uid); if (!q) return;
+  const owned = (q.cos?.owned || []).slice(); if (!owned.includes('moldura-recrutador')) owned.push('moldura-recrutador');
+  try { await db.doc('players/' + uid).update({ gold: (q.gold || 0) + 100, cos: { owned } }); post(`${q.name} recebeu a recompensa de convite: ${name} chegou ao nível 3.`, 'invite'); } catch (e) { console.warn(e); }
+}
+function applyFightToSelf(p, F, o = {}) {
+  p.hp = Math.max(o.minHp ?? 1, Math.round(F.hp)); p.hpAt = now();
+  for (const k in F.used) {
+    const before = stageOf(p.uses[k] || 0); p.uses[k] = (p.uses[k] || 0) + F.used[k]; const after = stageOf(p.uses[k]);
+    if (after > before) { const nm = CLASSES[p.cls].moves[k].n[after - 1]; pendingFx.push(() => { toast(`Seu golpe evoluiu: ${nm}!`, 'good'); post(`O golpe de ${p.name} evoluiu para ${nm} (estágio ${['I', 'II', 'III'][after - 1]}).`, 'evo'); }); }
+  }
+  if (F.allowItems) for (const k of ['potP', 'potG', 'elixir']) p.inv[k] = F.inv[k];
+}
+
+/* ---------- batalha (animação) ---------- */
+let audioCtx = null;
+function sfx(kind) {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+    const t = audioCtx.currentTime;
+    const map = { hit: [180, 70, .12, 'square'], crit: [320, 60, .25, 'sawtooth'], miss: [600, 900, .08, 'sine'], heal: [500, 800, .2, 'sine'], conc: [220, 440, .35, 'triangle'], ult: [90, 40, .9, 'sawtooth'], win: [440, 880, .6, 'triangle'] };
+    const [f1, f2, d, type] = map[kind] || map.hit;
+    o.type = type; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.start(t); o.stop(t + d + .02);
+  } catch (e) { /* som opcional */ }
+}
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let skipAnim = false;
+function bSide(F, el) {
+  const cl = F.isNpc ? '' : (CLASSES[F.cls]?.name || '');
+  el.innerHTML = `<div class="b-name" style="color:${F.isNpc ? 'var(--c-npc)' : CCOLOR(F.cls)}"></div><div class="small muted">${esc(cl)}${cl ? ' · ' : ''}nível ${F.lvl}</div><div class="bar hp"><i style="width:${F.hp / F.hpMax * 100}%"></i></div><div class="bar-txt"><span>Vida</span><span class="hpv">${Math.round(F.hp)}/${F.hpMax}</span></div><div class="bar ki"><i style="width:${F.ki / F.kiMax * 100}%"></i></div><div class="bar-txt"><span>Ki</span><span class="kiv">${Math.round(F.ki)}/${Math.round(F.kiMax)}</span></div>`;
+  el.querySelector('.b-name').textContent = F.name;
+}
+function setBars(st) {
+  for (const [k, el] of [['A', $('#bA')], ['B', $('#bB')]]) {
+    const s = st[k];
+    el.querySelector('.bar.hp i').style.width = (s.hp / s.hpMax * 100) + '%';
+    el.querySelector('.bar.ki i').style.width = (s.ki / s.kiMax * 100) + '%';
+    el.querySelector('.hpv').textContent = `${s.hp}/${s.hpMax}`;
+    el.querySelector('.kiv').textContent = `${s.ki}/${s.kiMax}`;
+  }
+}
+function openBattle(A, B) {
+  battleOpen = true; skipAnim = false;
+  $('#battle').hidden = false; document.body.style.overflow = 'hidden';
+  bSide(A, $('#bA')); bSide(B, $('#bB'));
+  $('#fA').className = 'b-f l'; $('#fB').className = 'b-f r';
+  $('#fA').innerHTML = silSVG(A.cls, A.cos || {}, { npc: A.isNpc });
+  $('#fB').innerHTML = silSVG(B.cls, B.cos || {}, { npc: B.isNpc });
+  $('#cA').className = 'card'; $('#cB').className = 'card';
+  $('#bLog').innerHTML = ''; $('#bCtrl').innerHTML = '';
+}
+function closeBattle() { battleOpen = false; $('#battle').hidden = true; document.body.style.overflow = ''; render(); }
+function logLine(txt, cls = '') { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = txt; const L = $('#bLog'); L.appendChild(d); L.scrollTop = L.scrollHeight; }
+function floatNum(sideEl, txt, cls) { const f = document.createElement('div'); f.className = 'float ' + cls; f.textContent = txt; sideEl.appendChild(f); setTimeout(() => f.remove(), 1200); }
+async function play(events) {
+  const w = ms => (skipAnim ? Promise.resolve() : sleep(RM ? ms * 0.4 : ms));
+  const fx = s => s === 'A' ? $('#fA') : $('#fB');
+  const other = s => s === 'A' ? 'B' : 'A';
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    const lastHit = events[i + 1]?.t === 'end';
+    if (e.t === 'round') { logLine(`Rodada ${e.n}`, 'r'); $('#cA').className = 'card'; $('#cB').className = 'card'; await w(250); }
+    else if (e.t === 'cards') { $('#cA').textContent = e.a; $('#cB').textContent = e.b; $('#cA').classList.add('show'); $('#cB').classList.add('show'); await w(750); }
+    else if (e.t === 'def') { const f = fx(e.who); f.classList.remove('guard'); void f.offsetWidth; f.classList.add('guard'); logLine(e.txt); await w(500); }
+    else if (e.t === 'conc') { const f = fx(e.who); f.classList.remove('charge'); void f.offsetWidth; f.classList.add('charge'); sfx('conc'); logLine(e.txt); await w(600); }
+    else if (e.t === 'heal') { if (!e.quiet || !skipAnim) floatNum(fx(e.who), '+' + e.amt, 'heal'); sfx('heal'); logLine(e.txt); await w(e.quiet ? 300 : 550); }
+    else if (e.t === 'steal') { logLine(e.txt); await w(600); }
+    else if (e.t === 'fail') { if (e.big && !skipAnim) await ultimate(e.move); logLine(e.txt); floatNum(fx(e.who), 'falhou', 'miss'); await w(500); }
+    else if (e.t === 'atk' || e.t === 'reflect') {
+      const a = fx(e.who), d = fx(e.t === 'reflect' ? e.who : other(e.who));
+      if (e.big && !skipAnim) await ultimate(e.move);
+      a.classList.add(e.who === 'A' ? 'lunge-l' : 'lunge-r');
+      const slow = lastHit && !skipAnim && !RM;
+      await w(slow ? 650 : 220);
+      if (e.miss) { d.classList.add('dodge'); floatNum(d, 'esquiva', 'miss'); sfx('miss'); }
+      else { d.classList.remove('hit'); void d.offsetWidth; d.classList.add('hit'); floatNum(d, '−' + e.dmg, e.crit || e.chaos ? 'crit' : ''); sfx(e.crit ? 'crit' : 'hit'); if ((e.crit || e.chaos || e.big) && !RM && !skipAnim) { const st = $('#bStage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); } }
+      setBars(e.st); logLine(e.txt);
+      await w(slow ? 1100 : 420);
+      a.classList.remove('lunge-l', 'lunge-r'); d.classList.remove('dodge');
+    }
+    else if (e.t === 'end') {
+      setBars(e.st);
+      const loser = fx(other(e.winner)); if (e.st[other(e.winner)].hp <= 0) loser.classList.add('down');
+      logLine(e.txt, 'r'); sfx('win'); await w(700);
+    }
+    if (e.st) setBars(e.st);
+  }
+}
+async function ultimate(name) {
+  const u = document.createElement('div'); u.className = 'b-ult'; u.textContent = name; $('#bStage').appendChild(u); sfx('ult');
+  await sleep(RM ? 500 : 1400); u.remove();
+}
+function ctrlSkip() {
+  $('#bCtrl').innerHTML = `<button class="btn" id="bSkip">Pular animação</button><button class="btn sm" id="bSnd">${soundOn ? 'Som: ligado' : 'Som: desligado'}</button>`;
+  $('#bSkip').onclick = () => { skipAnim = true; };
+  $('#bSnd').onclick = () => { soundOn = !soundOn; $('#bSnd').textContent = soundOn ? 'Som: ligado' : 'Som: desligado'; };
+}
+function ctrlClose(summary, onClose) {
+  $('#bCtrl').innerHTML = `<div class="stack" style="justify-items:center;width:100%"><div class="b-res"></div><div class="small muted" id="bSum" style="text-align:center;max-width:60ch"></div><button class="btn primary" id="bClose">Continuar</button></div>`;
+  $('#bCtrl .b-res').textContent = summary.title; $('#bSum').textContent = summary.text || '';
+  $('#bClose').onclick = () => { closeBattle(); if (onClose) onClose(); };
+  $('#bClose').focus();
+}
+/* luta automática com replay */
+async function autoBattle(A, B, ctx = {}) {
+  const res = runAuto(clone(A), clone(B), ctx);
+  return res;
+}
+async function showReplay(A0, B0, events, summary, onClose) {
+  openBattle(A0, B0); ctrlSkip();
+  await play(events);
+  ctrlClose(summary, onClose);
+}
+/* luta interativa contra NPC */
+function interactiveBattle(A, B, ctx, onEnd) {
+  openBattle(A, B);
+  const draw = () => {
+    const acts = [['atk', 'basico'], ['atk', 'rapido'], ['atk', 'especial'], ['atk', 'definitivo'], ['def'], ['conc']];
+    let html = acts.map(([k, m]) => {
+      if (k === 'atk') { const ok = canMove(A, m); const nm = moveName(A, m); const cost = MOLDES[m].ki; return `<button class="btn act" data-k="atk" data-m="${m}" ${ok ? '' : 'disabled'}>${esc(nm)}<small>${m === 'basico' ? '0 Ki' : cost + ' Ki'}${m === 'definitivo' && A.lvl < 10 ? ' · nível 10' : ''}</small></button>`; }
+      return `<button class="btn act" data-k="${k}">${k === 'def' ? 'Defender' : 'Concentrar'}<small>${k === 'def' ? '−50% dano, +10 Ki' : '+35 Ki, +20% dano'}</small></button>`;
+    }).join('');
+    if (A.allowItems) for (const i of ['potP', 'potG', 'elixir']) if (A.inv[i] > 0) html += `<button class="btn act" data-k="item" data-i="${i}">${esc(itemName(i))}<small>${A.inv[i]} no inventário</small></button>`;
+    html += `<button class="btn sm" id="bAuto">Lutar no automático</button>`;
+    if (!LS.get('zenite-coach')) html = `<div class="coach">Escolha uma ação. As duas escolhas são reveladas juntas, como cartas. Golpes gastam Ki; <b>Concentrar</b> recupera 35 de Ki, mas você recebe mais dano; <b>Defender</b> corta o dano pela metade. Quem tem mais Velocidade age primeiro.</div>` + html;
+    $('#bCtrl').innerHTML = html;
+    $('#bCtrl').querySelectorAll('[data-k]').forEach(b => b.onclick = () => step({ k: b.dataset.k, m: b.dataset.m, i: b.dataset.i }));
+    $('#bAuto').onclick = async () => { $('#bCtrl').innerHTML = ''; ctrlSkip(); while (!ctx.winner) { const ev = resolveRound(A, B, tacticChoice(A, B), npcChoice(B), ctx); await play(ev); } onEnd(ctx.winner, A, B); };
+  };
+  const step = async a => {
+    $('#bCtrl').innerHTML = '<span class="muted small">Resolvendo a rodada…</span>';
+    const ev = resolveRound(A, B, a, npcChoice(B), ctx);
+    await play(ev);
+    if (ctx.winner) { LS.set('zenite-coach', '1'); onEnd(ctx.winner, A, B); } else draw();
+  };
+  draw();
+}
+
+/* ---------- ações: caça, chefes ---------- */
+function fightBlocked(p) {
+  if (isWorking(p)) return 'Você está trabalhando até ' + new Date(p.job.endsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '.';
+  if (isRecovering(p)) return 'Você está se recuperando por mais ' + dur(p.recoverUntil - now()) + '.';
+  if (curHp(p) < 2) return 'Sua vida está zerada. Espere regenerar ou use uma poção.';
+  return null;
+}
+function huntLevel(p, ek) { const E = ENEMIES[ek]; return clamp(p.level, E.min, E.max); }
+async function startHunt(ek, mode) {
+  const block = fightBlocked(P); if (block) return toast(block, 'bad');
+  const E = ENEMIES[ek]; const lvl = huntLevel(P, ek);
+  const A = fighterFromPlayer(P, { items: true }); const B = npcFighter(E.name, lvl, { moves: E.moves });
+  const finish = (winner, Af) => endPve({ winner, Af, kind: 'hunt', ek, lvl, mode });
+  if (mode === 'rounds') interactiveBattle(A, B, {}, finish);
+  else { const A0 = clone(A), B0 = clone(B); const Ac = clone(A), Bc = clone(B); const ctx = {}; const r = runAuto(Ac, Bc, ctx); const s = await endPve({ winner: r.winner, Af: Ac, kind: 'hunt', ek, lvl, mode, deferred: true }); await showReplay(A0, B0, r.events, s, flushFx); }
+}
+async function endPve(o) {
+  let summary = { title: '', text: '' };
+  const won = o.winner === 'A';
+  await save(p => {
+    applyFightToSelf(p, o.Af);
+    const d = daily(p);
+    if (won) {
+      d.wins++; markTut(p, 'win');
+      const rm = o.mode === 'rounds' ? 1.25 : 1;
+      const lines = [];
+      if (o.kind === 'hunt') {
+        d.kills++;
+        const xp = o.lvl > p.level - 3 ? 10 * o.lvl : 0; const gold = 5 * o.lvl;
+        lines.push(...grant(p, { xp, gold }, { mult: rm }));
+        if (xp === 0) lines.push('sem XP: inimigo 3 ou mais níveis abaixo');
+        p.qp = p.qp || {};
+        for (const q of QUESTS) if (q.kill && q.kill.e === o.ek && !p.done.includes(q.id) && questAvailable(p, q)) p.qp[q.id] = Math.min(q.kill.n, (p.qp[q.id] || 0) + 1);
+        if (rnd() < 0.08) { const k = pick(DROPS); p.inv[k] = (p.inv[k] || 0) + 1; lines.push(`1× ${itemName(k)}`); }
+      }
+      summary = { title: 'Vitória', text: lines.join(' · ') };
+    } else {
+      const loss = Math.floor(exposedGold(p) * 0.10); p.gold -= loss; p.recoverUntil = now() + 30 * MIN; p.hp = 1; p.hpAt = now();
+      summary = { title: 'Derrota', text: `Você perdeu ${fmt(loss)} de ouro e fica 30 minutos se recuperando.` };
+    }
+  });
+  if (!o.deferred) ctrlClose(summary, flushFx);
+  return summary;
+}
+function questAvailable(p, q) { return zoneUnlocked(p, q.zone) && p.level >= q.lvl && (q.req || []).every(r => p.done.includes(r)); }
+function bossFighter(bk, o = {}) { const B = BOSSES[bk]; return npcFighter(B.name, B.lvl, { boss: true, desafio: o.desafio, mech: B.mech, moves: B.moves, hp: o.hp, hpMult: o.hpMult }); }
+async function startBoss(qid, mode, desafio) {
+  const q = QMAP[qid]; const bk = q.boss; const B = BOSSES[bk];
+  const block = fightBlocked(P); if (block) return toast(block, 'bad');
+  const first = !P.done.includes(qid);
+  if (!first && (P.bossCd?.[bk] || 0) > now()) return toast(`${B.name} volta em ${dur(P.bossCd[bk] - now())}.`, 'bad');
+  const A = fighterFromPlayer(P, { items: true }); const Bf = bossFighter(bk, { desafio });
+  const finish = (winner, Af) => endBoss({ winner, Af, q, bk, first, desafio, mode });
+  if (mode === 'rounds') interactiveBattle(A, Bf, {}, finish);
+  else { const A0 = clone(A), B0 = clone(Bf); const Ac = clone(A); const r = runAuto(Ac, clone(Bf), {}); const s = await endBoss({ winner: r.winner, Af: Ac, q, bk, first, desafio, mode, deferred: true }); await showReplay(A0, B0, r.events, s, flushFx); }
+}
+async function endBoss(o) {
+  const won = o.winner === 'A'; const B = BOSSES[o.bk];
+  let summary;
+  let legendWon = false;
+  if (won && o.desafio && B.zoneBoss) legendWon = await claimLegend(B.zoneBoss);
+  await save(p => {
+    applyFightToSelf(p, o.Af);
+    const d = daily(p);
+    if (won) {
+      d.wins++; markTut(p, 'win');
+      const rm = o.mode === 'rounds' ? 1.25 : 1;
+      let lines = [];
+      if (o.first) { lines = grant(p, o.q.rw, { mult: rm }); p.done.push(o.q.id); pendingFx.push(() => post(`${p.name} derrotou ${B.name} e concluiu "${o.q.name}".`, 'boss')); }
+      else lines = grant(p, { xp: Math.round(o.q.rw.xp * 0.5), gold: Math.round((o.q.rw.gold || 0) * 0.5), items: B.drop }, { mult: rm });
+      p.bossCd = p.bossCd || {}; p.bossCd[o.bk] = now() + 12 * HOUR;
+      if (o.desafio) {
+        lines.push(...grant(p, { items: { essencia: 1 }, title: `Desafiante: ${B.name}`, cos: 'aura-desafio' }));
+        if (!o.Af.usedPotion) lines.push(...grant(p, { title: 'Sem Poção', cos: 'aura-pura' }));
+        pendingFx.push(() => post(`${p.name} venceu ${B.name} em Modo Desafio!`, 'boss'));
+      }
+      if (legendWon) { p.lend = p.lend || []; if (!p.lend.includes(B.zoneBoss)) p.lend.push(B.zoneBoss); lines.push(`LENDÁRIO: ${LEGENDS[B.zoneBoss].name}`); pendingFx.push(() => post(`${p.name} conquistou o item Lendário ${LEGENDS[B.zoneBoss].name}. Só existe um nesta temporada.`, 'legend')); }
+      summary = { title: o.desafio ? 'Vitória no Modo Desafio' : 'Chefe derrotado', text: lines.join(' · ') };
+    } else {
+      const loss = Math.floor(exposedGold(p) * 0.10); p.gold -= loss; p.recoverUntil = now() + 30 * MIN; p.hp = 1; p.hpAt = now();
+      summary = { title: 'Derrota', text: `${B.name} venceu. Você perdeu ${fmt(loss)} de ouro e fica 30 minutos se recuperando.` };
+    }
+  });
+  if (!o.deferred) ctrlClose(summary, flushFx);
+  return summary;
+}
+async function claimLegend(z) {
+  const ref = db.doc('world/lendarios');
+  try {
+    const l = await ref.acquire({ holder: me, ttlMs: 5000 });
+    if (!l.acquired) return false;
+    const s = await ref.get(); const d = s.exists ? s.data() : {};
+    if (d[z]) return false;
+    await ref.set({ ...d, [z]: { uid: me, name: P.name, ts: now() } });
+    return true;
+  } catch (e) { console.warn(e); return false; }
+}
+
+/* ---------- chefes de grupo ---------- */
+function groupState(bk) { return world.groups[bk] || null; }
+async function attackGroup(qid) {
+  const q = QMAP[qid]; const bk = q.boss; const B = BOSSES[bk];
+  const block = fightBlocked(P); if (block) return toast(block, 'bad');
+  const d = daily(P); const tries = (P.groupTries?.[bk]?.date === d.date) ? P.groupTries[bk].n : 0;
+  if (tries >= 3) return toast('Você já fez as 3 tentativas de hoje contra este chefe.', 'bad');
+  const ref = db.doc('world/grupo-' + bk);
+  let g = (await ref.get()).data();
+  const fresh = () => { const f = bossFighter(bk, { hpMult: 3 }); return { hp: f.hpMax, max: f.hpMax, dmg: {}, names: {}, porta: false, startedAt: now(), defeatedAt: 0, respawnAt: 0, claimed: {} }; };
+  if (!g || (g.defeatedAt && g.respawnAt < now())) { g = fresh(); await ref.set(g); }
+  if (g.defeatedAt) return toast(`${B.name} já caiu. Volta em ${dur(g.respawnAt - now())}.`, 'bad');
+  const porta = g.porta || P.cls === 'porta';
+  const A = fighterFromPlayer(P, { items: true, solo: false, statMult: porta ? 1.1 : 1 });
+  const Bf = bossFighter(bk, { hpMult: 3, hp: g.hp });
+  const A0 = clone(A), B0 = clone(Bf); const Ac = clone(A), Bc = clone(Bf);
+  const ctx = { maxRounds: 6, limitTxt: 'Fim das 6 rodadas desta investida.' };
+  const r = runAuto(Ac, Bc, ctx);
+  const dealt = Math.max(0, Math.round(g.hp - Math.max(0, Bc.hp)));
+  const latest = (await ref.get()).data() || g;
+  const newHp = Math.max(0, (latest.hp ?? g.hp) - dealt);
+  const upd = { hp: newHp, dmg: { [me]: ((latest.dmg || {})[me] || 0) + dealt }, names: { [me]: P.name } };
+  if (P.cls === 'porta') upd.porta = true;
+  if (newHp <= 0 && !latest.defeatedAt) { upd.defeatedAt = now(); upd.respawnAt = now() + DAY; }
+  try { await ref.update(upd); } catch (e) { handleErr(e); }
+  if (upd.defeatedAt) post(`${B.name} caiu! O grupo venceu o chefe.`, 'boss');
+  const lost = r.winner === 'B' && Ac.hp <= 0;
+  await save(p => {
+    applyFightToSelf(p, Ac);
+    const dd = daily(p); p.groupTries = p.groupTries || {}; p.groupTries[bk] = { date: dd.date, n: tries + 1 };
+    if (lost) { p.recoverUntil = now() + 30 * MIN; p.hp = 1; p.hpAt = now(); }
+  });
+  await showReplay(A0, B0, r.events, { title: `${fmt(dealt)} de dano no chefe`, text: newHp <= 0 ? 'O chefe caiu! Receba a recompensa na zona.' : `Vida restante do chefe: ${fmt(newHp)} de ${fmt(g.max)}.` + (lost ? ' Você foi derrubado e fica 30 minutos se recuperando.' : '') }, flushFx);
+}
+async function claimGroup(qid) {
+  const q = QMAP[qid]; const bk = q.boss; const g = groupState(bk);
+  if (!g || !g.defeatedAt || !(g.dmg || {})[me] || (g.claimed || {})[me]) return;
+  try { await db.doc('world/grupo-' + bk).update({ claimed: { [me]: true } }); } catch (e) { return handleErr(e); }
+  let lines;
+  await save(p => {
+    const rw = clone(q.rw); if (g.porta) rw.gold = Math.round(rw.gold * 1.15);
+    lines = grant(p, rw); if (!p.done.includes(qid)) p.done.push(qid);
+  });
+  toast('Recompensa do grupo: ' + lines.join(' · '), 'good'); flushFx();
+}
+
+/* ---------- expedições ---------- */
+function expDuration(p, q) { let m = q.min * timeMult(); if (p.cls === 'batedor') m *= 0.8; if (p.prof === 'mensageiro') m *= 0.75; return Math.round(m * MIN); }
+function startExp(qid) {
+  const q = QMAP[qid];
+  if (isWorking(P)) return toast('Você está trabalhando. Termine o turno antes de sair em expedição.', 'bad');
+  if ((P.exps || []).length >= 2) return toast('Você já tem 2 expedições em andamento.', 'bad');
+  if ((P.exps || []).some(e => e.qid === qid)) return toast('Essa expedição já está em andamento.', 'bad');
+  save(p => { markTut(p, 'exp'); p.exps = p.exps || []; p.exps.push({ id: Math.random().toString(36).slice(2, 9), qid, endsAt: now() + expDuration(p, q) }); });
+  toast(`Expedição iniciada: ${q.name}.`);
+}
+function useRacao(eid) {
+  if (!(P.inv.racao > 0)) return toast('Você não tem Ração de Viagem.', 'bad');
+  save(p => { const e = p.exps.find(x => x.id === eid); if (!e) return false; e.endsAt -= 15 * MIN; p.inv.racao--; });
+}
+async function claimExp(eid) {
+  const e = P.exps.find(x => x.id === eid); if (!e || e.endsAt > now()) return;
+  const q = QMAP[e.qid]; const repeat = P.done.includes(q.id);
+  let ambush = null;
+  if (q.min >= 60 && rnd() < 0.25) {
+    const zEn = ZONES[q.zone].enemies; const ek = pick(zEn); const En = ENEMIES[ek];
+    const lvl = q.night ? En.max + 2 : clamp(P.level, En.min, En.max);
+    const A = fighterFromPlayer(P, { fullHp: false }); const B = npcFighter((q.night ? 'Emboscada noturna: ' : 'Emboscada: ') + En.name, lvl, { moves: En.moves, boss: q.night });
+    const A0 = clone(A), B0 = clone(B); const Ac = clone(A); const r = runAuto(Ac, clone(B), {});
+    ambush = { A0, B0, r, Ac };
+  }
+  const half = ambush && ambush.r.winner !== 'A';
+  let lines = [];
+  await save(p => {
+    p.exps = p.exps.filter(x => x.id !== eid);
+    const rw = clone(q.rw);
+    if (repeat && q.type === 'expedicao') { rw.xp = Math.round(rw.xp * 0.4); rw.gold = Math.round((rw.gold || 0) * 0.4); delete rw.points; }
+    if (half) { rw.xp = Math.round((rw.xp || 0) / 2); rw.gold = Math.round((rw.gold || 0) / 2); if (rw.items) for (const k in rw.items) rw.items[k] = Math.max(1, Math.floor(rw.items[k] / 2)); rw.drop = Math.floor((rw.drop || 0) / 2); delete rw.points; }
+    lines = grant(p, rw);
+    if (!p.done.includes(q.id)) p.done.push(q.id);
+    daily(p).exps++;
+    if (ambush) applyFightToSelf(p, ambush.Ac);
+  });
+  if (ambush) await showReplay(ambush.A0, ambush.B0, ambush.r.events, { title: half ? 'Emboscada perdida' : 'Emboscada vencida', text: (half ? 'Você chegou com metade da recompensa: ' : 'Recompensa completa: ') + lines.join(' · ') }, flushFx);
+  else { toast(`${q.name}: ${lines.join(' · ')}`, 'good'); flushFx(); }
+}
+function claimKillQuest(qid) {
+  const q = QMAP[qid]; if ((P.qp?.[qid] || 0) < q.kill.n || P.done.includes(qid)) return;
+  let lines; save(p => { lines = grant(p, q.rw); p.done.push(qid); pendingFx.push(() => post(`${p.name} concluiu "${q.name}".`, 'quest')); });
+  writeQ.then(() => { toast(`${q.name}: ${lines.join(' · ')}`, 'good'); flushFx(); });
+}
+const DAILIES = [
+  { id: 'treino', name: 'Treino Matinal', desc: 'Vencer 2 lutas', need: d => d.wins >= 2, prog: d => `${Math.min(2, d.wins)}/2` },
+  { id: 'patrulha', name: 'Patrulha', desc: 'Derrotar 5 inimigos da sua zona', need: d => d.kills >= 5, prog: d => `${Math.min(5, d.kills)}/5` },
+  { id: 'ajuda', name: 'Ajuda em Mirante', desc: 'Concluir 1 expedição', need: d => d.exps >= 1, prog: d => `${Math.min(1, d.exps)}/1` }
+];
+function claimDaily(id) {
+  let lines; save(p => { const d = daily(p); if (d.claimed.includes(id)) return false; d.claimed.push(id); lines = grant(p, { xp: 20 * p.level, gold: 15 * p.level }); });
+  writeQ.then(() => { if (lines) toast('Diária concluída: ' + lines.join(' · '), 'good'); flushFx(); });
+}
+
+/* ---------- trabalho, loja, oficina ---------- */
+function salaryPerHour(p) { return Math.round((20 + p.level * 5) * (PROFS[p.prof]?.mult || 1)); }
+function startJob(hours) {
+  if (!P.prof) return toast('Escolha uma profissão primeiro (a partir do nível 3).', 'bad');
+  if (isWorking(P)) return;
+  save(p => { p.job = { hours, startedAt: now(), endsAt: now() + hours * HOUR * timeMult(), prof: p.prof }; });
+  toast(`Turno de ${hours} h iniciado.`);
+}
+function claimJob() {
+  if (!P.job || P.job.endsAt > now()) return;
+  let lines = [];
+  save(p => {
+    const h = p.job.hours; const sal = salaryPerHour(p) * h; p.gold += sal; lines.push(`${fmt(sal)} de ouro`);
+    if (p.job.prof === 'cozinheiro') { const n = Math.min(h, p.inv.erva || 0); if (n > 0) { p.inv.erva -= n; p.inv.potP = (p.inv.potP || 0) + n; lines.push(`${n}× Poção pequena (com ${n} Erva)`); } else lines.push('nenhuma poção: faltou Erva'); }
+    if (rnd() < 0.10 + 0.02 * h) { const k = pick(DROPS); p.inv[k] = (p.inv[k] || 0) + 1; lines.push(`achou 1× ${itemName(k)}`); }
+    p.job = null;
+  });
+  writeQ.then(() => toast('Turno concluído: ' + lines.join(' · '), 'good'));
+}
+function cancelJob() { save(p => { p.job = null; }); toast('Turno cancelado. Sem salário.'); }
+function setProf(k) {
+  if (P.level < 3) return toast('Profissões liberam no nível 3.', 'bad');
+  if (isWorking(P)) return toast('Termine o turno antes de trocar de profissão.', 'bad');
+  if (P.prof && (P.profAt || 0) + 7 * DAY > now()) return toast(`Você pode trocar de profissão em ${dur(P.profAt + 7 * DAY - now())}.`, 'bad');
+  save(p => { p.prof = k; p.profAt = now(); });
+  toast(`Agora você é ${PROFS[k].name}.`, 'good');
+}
+function shopBlocked() { if (isWorking(P)) { toast('Você está trabalhando. A loja abre para você ao fim do turno.', 'bad'); return true; } return false; }
+function buyCons(k) {
+  if (shopBlocked()) return; const price = Math.round(CONS[k].price * discount(P));
+  if (P.gold < price) return toast('Ouro insuficiente.', 'bad');
+  save(p => { p.gold -= price; p.inv[k] = (p.inv[k] || 0) + 1; markTut(p, 'shop'); });
+}
+function buyEquip(slot, tier) {
+  if (shopBlocked()) return; const T = TIERS[tier]; const price = Math.round(T.price * discount(P));
+  if (P.level < T.lvl) return toast(`Requer nível ${T.lvl}.`, 'bad');
+  if (P.gold < price) return toast('Ouro insuficiente.', 'bad');
+  for (const m in (T.mat || {})) if ((P.inv[m] || 0) < T.mat[m]) return toast(`Faltam materiais: ${T.mat[m]}× ${itemName(m)}.`, 'bad');
+  save(p => { p.gold -= price; for (const m in (T.mat || {})) p.inv[m] -= T.mat[m]; p.equip[slot] = { tier }; markTut(p, 'shop'); });
+  toast(`${SLOTS[slot].name} ${T.name} equipada.`, 'good');
+}
+function buyCos(id) {
+  if (shopBlocked()) return; const C = COSM[id]; const price = Math.round(C.price * discount(P));
+  if (P.cos.owned.includes(id)) return; if (P.gold < price) return toast('Ouro insuficiente.', 'bad');
+  save(p => { p.gold -= price; p.cos.owned.push(id); p.cos[C.kind] = id; markTut(p, 'shop'); });
+}
+function buyVault() {
+  if (shopBlocked()) return; const lv = (P.vault || 0) + 1; const price = [0, 300, 1500, 5000][lv]; if (!price) return;
+  if (P.gold < price) return toast('Ouro insuficiente.', 'bad');
+  save(p => { p.gold -= price; p.vault = lv; markTut(p, 'shop'); }); toast(`Cofre nível ${lv}: protege ${[0, 20, 40, 60][lv]}% do seu ouro.`, 'good');
+}
+function forgeBronze(slot) {
+  if (P.prof !== 'ferreiro') return; if ((P.inv.minerio || 0) < 2) return toast('Precisa de 2 Minério.', 'bad');
+  save(p => { p.inv.minerio -= 2; p.equip[slot] = { tier: 'bronze' }; }); toast(`${SLOTS[slot].name} Bronze forjada.`, 'good');
+}
+function forgeEpic(slot) {
+  if (P.prof !== 'ferreiro') return;
+  if ((P.inv.essencia || 0) < 1 || (P.inv.minerio || 0) < 3 || P.gold < 500) return toast('Precisa de 1 Essência de Desafio, 3 Minério e 500 de ouro.', 'bad');
+  save(p => { p.inv.essencia--; p.inv.minerio -= 3; p.gold -= 500; p.equip[slot] = { tier: 'epico' }; pendingFx.push(() => post(`${p.name} forjou uma peça Épica: ${SLOTS[slot].name}.`, 'craft')); });
+  writeQ.then(flushFx); toast(`${SLOTS[slot].name} Épica forjada.`, 'good');
+}
+function sew(id) {
+  if (P.prof !== 'alfaiate') return; const C = COSM[id];
+  for (const m in C.craft) if ((P.inv[m] || 0) < C.craft[m]) return toast(`Precisa de ${C.craft[m]}× ${itemName(m)}.`, 'bad');
+  save(p => { for (const m in C.craft) p.inv[m] -= C.craft[m]; if (!p.cos.owned.includes(id)) p.cos.owned.push(id); else p.cosStock = Object.assign(p.cosStock || {}, { [id]: ((p.cosStock || {})[id] || 0) + 1 }); });
+  toast(`${C.name} costurada.`, 'good');
+}
+function equipCos(kind, id) { save(p => { p.cos[kind] = id || null; }); }
+function equipLegend(z) { const L = LEGENDS[z]; save(p => { p.equip[L.slot] = { tier: 'lendario', id: z }; }); }
+function allocate(stat, n) { if ((P.points || 0) < n) return; save(p => { p.points -= n; p.stats[stat] += n; }); }
+function changeClass(k) {
+  const cost = P.level * 200;
+  if ((P.clsAt || 0) + 7 * DAY > now()) return toast(`Próxima troca de classe em ${dur(P.clsAt + 7 * DAY - now())}.`, 'bad');
+  if (P.gold < cost) return toast(`A troca custa ${fmt(cost)} de ouro.`, 'bad');
+  save(p => { p.gold -= cost; p.cls = k; p.clsAt = now(); p.uses = {}; pendingFx.push(() => post(`${p.name} agora é ${CLASSES[k].name}.`, 'class')); });
+  writeQ.then(flushFx); closeModal(); toast(`Agora você é ${CLASSES[k].name}.`, 'good');
+}
+function usePotionOut(k) {
+  if (!(P.inv[k] > 0)) return;
+  save(p => { const m = hpMaxOf(p); const c = curHp(p); p.hp = k === 'potG' ? m : Math.min(m, c + m * 0.3); p.hpAt = now(); p.inv[k]--; });
+}
+
+/* ---------- banca ---------- */
+async function listItem(key, qty, price) {
+  qty = Math.floor(qty); price = Math.floor(price);
+  if (!(qty > 0 && price > 0)) return toast('Informe quantidade e preço válidos.', 'bad');
+  const isCos = !!COSM[key];
+  if (isCos) { if (!((P.cosStock || {})[key] >= qty)) return toast('Você não tem unidades extras dessa peça.', 'bad'); }
+  else if ((P.inv[key] || 0) < qty) return toast('Quantidade maior do que o seu inventário.', 'bad');
+  await save(p => { if (isCos) p.cosStock[key] -= qty; else p.inv[key] -= qty; });
+  try { await db.collection('banca').add({ seller: me, sellerName: P.name, key, qty, price, isCos, ts: now() }); toast('Anúncio publicado na Banca.', 'good'); } catch (e) { handleErr(e); }
+}
+async function buyListing(id) {
+  const ref = db.doc('banca/' + id);
+  try {
+    const l = await ref.acquire({ holder: me, ttlMs: 6000 }); if (!l.acquired) return toast('Outra pessoa está comprando esse item. Tente de novo.', 'bad');
+    const s = await ref.get(); if (!s.exists) return toast('Esse anúncio já foi vendido.', 'bad');
+    const L = s.data(); if (P.gold < L.price) return toast('Ouro insuficiente.', 'bad');
+    const seller = players.get(L.seller);
+    await save(p => { p.gold -= L.price; if (L.isCos) { if (!p.cos.owned.includes(L.key)) p.cos.owned.push(L.key); else p.cosStock = Object.assign(p.cosStock || {}, { [L.key]: ((p.cosStock || {})[L.key] || 0) + L.qty }); } else p.inv[L.key] = (p.inv[L.key] || 0) + L.qty; });
+    if (seller) await db.doc('players/' + L.seller).update({ gold: (seller.gold || 0) + L.price });
+    await ref.delete();
+    toast('Compra feita.', 'good');
+  } catch (e) { handleErr(e); }
+}
+async function cancelListing(id) {
+  const L = banca.find(b => b.id === id); if (!L || L.seller !== me) return;
+  try { await db.doc('banca/' + id).delete(); await save(p => { if (L.isCos) p.cosStock[L.key] = ((p.cosStock || {})[L.key] || 0) + L.qty; else p.inv[L.key] = (p.inv[L.key] || 0) + L.qty; }); } catch (e) { handleErr(e); }
+}
+
+/* ---------- saque ---------- */
+function saqueCheck(q) {
+  const p = P; const rev = (p.revenge || {})[q.uid] > now();
+  if (q.uid === me) return 'Esse é você.';
+  if (fightBlocked(p)) return fightBlocked(p);
+  if (rev) return null;
+  if ((p.saqueAt || 0) + 15 * MIN > now()) return `Você pode saquear de novo em ${dur(p.saqueAt + 15 * MIN - now())}.`;
+  if (q.level < 5) return 'Jogadores abaixo do nível 5 não podem ser saqueados.';
+  if (Math.abs(q.level - p.level) > 5) return 'Só vale saquear alvos com até 5 níveis de diferença.';
+  if ((q.attackedAt || 0) + HOUR > now()) return `${q.name} foi saqueado há pouco. Protegido por mais ${dur(q.attackedAt + HOUR - now())}.`;
+  if (((p.pairs || {})[q.uid] || 0) + 12 * HOUR > now()) return `Você só pode saquear ${q.name} de novo em ${dur(p.pairs[q.uid] + 12 * HOUR - now())}.`;
+  if (curHp(p) < hpMaxOf(p) * 0.25) return 'Sua vida está abaixo de 25%.';
+  if (curHp(q) < hpMaxOf(q) * 0.25) return `${q.name} está com a vida abaixo de 25%.`;
+  return null;
+}
+async function doSaque(uid) {
+  const q = players.get(uid); if (!q) return;
+  const block = saqueCheck(q); if (block) return toast(block, 'bad');
+  const revenge = (P.revenge || {})[uid] > now();
+  if (q.cls === 'batedor' && rnd() < 0.10) {
+    await save(p => { p.saqueAt = now(); p.pairs = p.pairs || {}; p.pairs[uid] = now(); });
+    return toast(`${q.name} percebeu a emboscada e escapou pela trilha. Saque perdido.`, 'bad');
+  }
+  const A = fighterFromPlayer(P, { revenge }); const B = fighterFromPlayer(q, {});
+  const A0 = clone(A), B0 = clone(B); const Ac = clone(A), Bc = clone(B);
+  const r = runAuto(Ac, Bc, {});
+  const won = r.winner === 'A';
+  const sameOrHigher = q.level >= P.level;
+  let goldMove = 0, xpGain = 0;
+  if (won) { goldMove = Math.floor(exposedGold(q) * (0.05 + rnd() * 0.05)); xpGain = sameOrHigher ? 20 * q.level : 0; }
+  else { goldMove = Math.floor(exposedGold(P) * 0.05); xpGain = sameOrHigher ? 8 * q.level : 0; }
+  const lines = r.events.filter(e => e.txt && !e.quiet).map(e => e.txt).slice(-24);
+  const report = { ts: now(), from: me, fromName: P.name, defenderWon: !won, gold: goldMove, lines };
+  const upd = {
+    gold: Math.max(0, (q.gold || 0) + (won ? -goldMove : goldMove)),
+    hp: Math.max(1, Math.round(Bc.hp)), hpAt: now(), attackedAt: now(),
+    reports: [report, ...(q.reports || [])].slice(0, 8),
+    revenge: { [me]: now() + 12 * HOUR }
+  };
+  if (!won) { upd.wins = (q.wins || 0) + 1; }
+  try { await db.doc('players/' + uid).update(upd); } catch (e) { return handleErr(e); }
+  await save(p => {
+    applyFightToSelf(p, Ac);
+    if (won) { p.gold += goldMove; p.wins = (p.wins || 0) + 1; daily(p).wins++; } else { p.gold -= goldMove; p.losses = (p.losses || 0) + 1; }
+    if (xpGain) addXp(p, xpGain);
+    p.saqueAt = now(); p.pairs = p.pairs || {}; p.pairs[uid] = now(); markTut(p, 'social');
+    if (revenge) { p.revenge = p.revenge || {}; p.revenge[uid] = 0; }
+  });
+  post(won ? `${P.name} saqueou ${q.name} e levou ${fmt(goldMove)} de ouro.` : `${q.name} repeliu o saque de ${P.name} e ficou com ${fmt(goldMove)} de ouro.`, 'saque');
+  await showReplay(A0, B0, r.events, { title: won ? 'Saque bem-sucedido' : 'Saque repelido', text: (won ? `Você levou ${fmt(goldMove)} de ouro` : `Você pagou ${fmt(goldMove)} de ouro a ${q.name}`) + (xpGain ? ` · ${fmt(xpGain)} XP` : ' · sem XP (alvo de nível menor)') + (revenge ? ' · vingança cumprida' : '') }, flushFx);
+}
+
+/* ---------- duelos ---------- */
+const allDuels = () => { const m = new Map(); [...duelsA, ...duelsB].forEach(d => m.set(d.id, d)); return [...m.values()].sort((a, b) => b.createdAt - a.createdAt); };
+async function challenge(uid, stake) {
+  const q = players.get(uid); if (!q || uid === me) return;
+  stake = Math.max(0, Math.floor(stake || 0));
+  if (stake > P.gold) return toast('Você não tem esse ouro para apostar.', 'bad');
+  if (allDuels().some(d => (d.status === 'pending' || d.status === 'active') && ((d.a === me && d.b === uid) || (d.b === me && d.a === uid)))) return toast('Já existe um duelo aberto entre vocês.', 'bad');
+  try { await db.collection('duels').add({ a: me, b: uid, aName: P.name, bName: q.name, stake, status: 'pending', createdAt: now(), round: 0 }); toast(`Desafio enviado a ${q.name}.`, 'good'); closeModal(); save(p => { markTut(p, 'social'); }); } catch (e) { handleErr(e); }
+}
+async function acceptDuel(id) {
+  const d = allDuels().find(x => x.id === id); if (!d) return;
+  const A = players.get(d.a), B = players.get(d.b); if (!A || !B) return;
+  if (d.stake > P.gold) return toast('Você não tem ouro suficiente para cobrir a aposta.', 'bad');
+  const fA = fighterFromPlayer(A, { fullHp: true }), fB = fighterFromPlayer(B, { fullHp: true });
+  const base = { ...d }; delete base.id;
+  try { await db.doc('duels/' + id).set({ ...base, status: 'active', round: 1, deadline: now() + 2 * MIN, choices: { a: null, b: null }, fA, fB, lastEvents: [], log: [], winner: null, applied: { a: false, b: false }, ctxRound: 0 }); openDuel(id); } catch (e) { handleErr(e); }
+}
+async function declineDuel(id) { try { await db.doc('duels/' + id).update({ status: 'declined' }); } catch (e) { handleErr(e); } }
+let duelView = null; // { id, unsub, shownRound }
+function openDuel(id) {
+  if (duelView && duelView.id === id) return;
+  closeDuelView();
+  duelView = { id, shownRound: 0, playing: false };
+  duelView.unsub = db.doc('duels/' + id).onSnapshot(s => { if (s.exists) onDuelSnap({ id, ...s.data() }); }, e => console.warn(e));
+  duelView.timer = setInterval(() => { if (duelView && duelView.last) { maybeResolve(duelView.last); drawDuelCtrl(duelView.last); } }, 1000);
+}
+function closeDuelView() { if (duelView) { duelView.unsub && duelView.unsub(); clearInterval(duelView.timer); duelView = null; } }
+async function onDuelSnap(d) {
+  if (!duelView) return;
+  duelView.last = d;
+  const mySide = d.a === me ? 'a' : 'b';
+  if (!battleOpen) { openBattle(d.fA, d.fB); duelView.shownRound = d.round - 1; }
+  if (d.lastEvents && d.lastEvents.length && duelView.shownRound < d.round - 1 && !duelView.playing) {
+    duelView.playing = true; duelView.shownRound = d.round - 1;
+    $('#bCtrl').innerHTML = '<span class="muted small">Revelando as ações…</span>';
+    await play(d.lastEvents);
+    duelView.playing = false;
+  }
+  if (d.status === 'done') { await applyDuelResult(d, mySide); return; }
+  drawDuelCtrl(d); maybeResolve(d);
+}
+function drawDuelCtrl(d) {
+  if (!duelView || duelView.playing || d.status !== 'active') return;
+  const side = d.a === me ? 'a' : 'b'; const F = side === 'a' ? d.fA : d.fB;
+  const left = Math.max(0, d.deadline - now());
+  const chosen = d.choices && d.choices[side];
+  const head = `<div class="small muted" style="width:100%;text-align:center">Rodada ${d.round} · ${Math.ceil(left / 1000)} s para escolher${chosen ? ' · sua ação está escolhida, aguardando o adversário' : ''}</div>`;
+  if (chosen) { if (!$('#bCtrl').dataset.waiting || $('#bCtrl').dataset.round !== String(d.round)) { $('#bCtrl').dataset.waiting = '1'; } $('#bCtrl').innerHTML = head + `<button class="btn sm" id="dLeave">Sair (a tática joga por você)</button>`; $('#dLeave').onclick = leaveDuel; return; }
+  if ($('#bCtrl').dataset.round === String(d.round) && $('#bCtrl').querySelector('[data-k]')) { const h = $('#bCtrl').querySelector('.small'); if (h) h.outerHTML = head; return; }
+  $('#bCtrl').dataset.round = String(d.round); delete $('#bCtrl').dataset.waiting;
+  const acts = [['atk', 'basico'], ['atk', 'rapido'], ['atk', 'especial'], ['atk', 'definitivo'], ['def'], ['conc']];
+  $('#bCtrl').innerHTML = head + acts.map(([k, m]) => {
+    if (k === 'atk') { const ok = canMove(F, m); return `<button class="btn act" data-k="atk" data-m="${m}" ${ok ? '' : 'disabled'}>${esc(moveName(F, m))}<small>${MOLDES[m].ki} Ki</small></button>`; }
+    return `<button class="btn act" data-k="${k}">${k === 'def' ? 'Defender' : 'Concentrar'}</button>`;
+  }).join('') + `<button class="btn sm" id="dLeave">Sair (a tática joga por você)</button>`;
+  $('#bCtrl').querySelectorAll('[data-k]').forEach(b => b.onclick = async () => {
+    $('#bCtrl').querySelectorAll('button').forEach(x => x.disabled = true);
+    const choice = b.dataset.m ? { k: b.dataset.k, m: b.dataset.m } : { k: b.dataset.k };
+    try { await db.doc('duels/' + d.id).update({ choices: { [side]: choice } }); } catch (e) { handleErr(e); }
+  });
+  $('#dLeave').onclick = leaveDuel;
+}
+function leaveDuel() { closeDuelView(); closeBattle(); }
+let resolving = false;
+async function maybeResolve(d) {
+  if (resolving || d.status !== 'active') return;
+  const both = d.choices && d.choices.a && d.choices.b;
+  if (!both && now() < d.deadline) return;
+  resolving = true;
+  const ref = db.doc('duels/' + d.id);
+  try {
+    const l = await ref.acquire({ holder: me, ttlMs: 8000 }); if (!l.acquired) return;
+    const s = await ref.get(); if (!s.exists) return; let x = s.data();
+    if (x.status !== 'active' || x.round !== d.round) return;
+    const A = x.fA, B = x.fB; const ctx = { round: x.ctxRound || 0 };
+    const ch = x.choices || {};
+    // quem não escolheu a tempo joga pela própria tática de defesa
+    const events = resolveRound(A, B, ch.a || tacticChoice(A, B), ch.b || tacticChoice(B, A), ctx);
+    const round = x.round + 1; const choices = { a: null, b: null };
+    const done = !!ctx.winner;
+    const log = (x.log || []).concat(events.filter(e => e.txt && !e.quiet).map(e => e.txt)).slice(-60);
+    await ref.set({ ...x, fA: A, fB: B, round, choices, deadline: now() + 2 * MIN, lastEvents: events, log, ctxRound: ctx.round, status: done ? 'done' : 'active', winner: done ? (ctx.winner === 'A' ? x.a : x.b) : null });
+  } catch (e) { console.warn(e); } finally { resolving = false; }
+}
+async function applyDuelResult(d, side) {
+  if (!d.applied || d.applied[side]) { ctrlClose({ title: d.winner === me ? 'Vitória no duelo' : 'Derrota no duelo', text: 'Resultado já registrado.' }, closeDuelView); return; }
+  const won = d.winner === me; const oppUid = side === 'a' ? d.b : d.a; const opp = players.get(oppUid);
+  const oppLvl = side === 'a' ? d.fB.lvl : d.fA.lvl; const sameOrHigher = oppLvl >= P.level;
+  const myF = side === 'a' ? d.fA : d.fB;
+  const xpGain = sameOrHigher ? (won ? 20 : 8) * oppLvl : 0;
+  try { await db.doc('duels/' + d.id).update({ applied: { [side]: true } }); } catch (e) { console.warn(e); }
+  await save(p => {
+    for (const k in (myF.used || {})) { const before = stageOf(p.uses[k] || 0); p.uses[k] = (p.uses[k] || 0) + myF.used[k]; const after = stageOf(p.uses[k]); if (after > before) { const nm = CLASSES[p.cls].moves[k].n[after - 1]; pendingFx.push(() => post(`O golpe de ${p.name} evoluiu para ${nm}.`, 'evo')); } }
+    if (won) { p.wins = (p.wins || 0) + 1; p.gold += d.stake || 0; p.duelStreak = (p.duelStreak || 0) + 1; daily(p).wins++; if (p.duelStreak >= 10) grant(p, { title: 'Invicto', cos: 'faixa-invicto' }, { quest: false }); }
+    else { p.losses = (p.losses || 0) + 1; p.gold = Math.max(0, p.gold - (d.stake || 0)); p.duelStreak = 0; }
+    if (xpGain) addXp(p, xpGain);
+  });
+  if (won) post(`${P.name} venceu o duelo contra ${opp?.name || 'o adversário'}${d.stake ? ` e levou ${fmt(d.stake)} de ouro` : ''}.`, 'duel');
+  ctrlClose({ title: won ? 'Vitória no duelo' : 'Derrota no duelo', text: (d.stake ? (won ? `+${fmt(d.stake)} de ouro` : `−${fmt(d.stake)} de ouro`) : 'Duelo amistoso') + (xpGain ? ` · ${fmt(xpGain)} XP` : ' · sem XP (adversário de nível menor)') }, () => { closeDuelView(); flushFx(); });
+}
+
+/* ---------- modal ---------- */
+function openModal(html, wire) { $('#modalIn').innerHTML = html; $('#modal').hidden = false; if (wire) wire($('#modalIn')); const f = $('#modalIn').querySelector('button, input, select'); if (f) f.focus(); }
+function closeModal() { $('#modal').hidden = true; $('#modalIn').innerHTML = ''; }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+/* ---------- render ---------- */
+const TABS = [['lutador', 'Lutador'], ['zonas', 'Zonas'], ['mirante', 'Mirante'], ['arena', 'Arena'], ['mural', 'Mural'], ['temporada', 'Temporada']];
+function render() {
+  if (!booted) return;
+  if (!P) { renderCreate(); return; }
+  if (battleOpen) { renderHud(); return; }
+  const ae = document.activeElement;
+  if (ae && $('#view').contains(ae) && (ae.tagName === 'INPUT' || ae.tagName === 'SELECT')) { renderHud(); return; }
+  renderHud();
+  const v = $('#view');
+  const fn = { lutador: vLutador, zonas: vZonas, mirante: vMirante, arena: vArena, mural: vMural, temporada: vTemporada }[tab];
+  v.innerHTML = tutCard() + fn();
+}
+function renderHud() {
+  $('#hud').hidden = false;
+  const p = P; const hm = hpMaxOf(p), hc = curHp(p);
+  const chips = [];
+  if (testMode()) chips.push(`<span class="chip warn" title="Na primeira semana, expedições e trabalho levam metade do tempo">Modo teste · tempos pela metade</span>`);
+  if (isWorking(p)) chips.push(`<span class="chip">Trabalhando · ${dur(p.job.endsAt - now())}</span>`);
+  else if (p.job) chips.push(`<span class="chip good">Turno concluído</span>`);
+  if (isRecovering(p)) chips.push(`<span class="chip bad">Recuperando · ${dur(p.recoverUntil - now())}</span>`);
+  const readyExp = (p.exps || []).filter(e => e.endsAt <= now()).length; if (readyExp) chips.push(`<span class="chip good">${readyExp} expedição pronta</span>`);
+  if (p.points) chips.push(`<span class="chip warn">${p.points} pontos para distribuir</span>`);
+  $('#hudIn').innerHTML = `<div class="brand">ZÊNITE</div>
+  <div class="hud-me">
+    <span class="dot" style="background:${CCOLOR(p.cls)}"></span>
+    <div><div class="hud-name"></div><div class="small muted">${esc(CLASSES[p.cls].name)} · nível ${p.level}</div></div>
+    <div class="bars">
+      <div class="bar hp" title="Vida"><i style="width:${hc / hm * 100}%"></i></div>
+      <div class="bar-txt"><span>Vida ${fmt(hc)}/${fmt(hm)}</span><span>XP ${p.level >= 50 ? 'máx.' : fmt(p.xp) + '/' + fmt(xpNeed(p.level))}</span></div>
+      <div class="bar xp" title="XP"><i style="width:${p.level >= 50 ? 100 : p.xp / xpNeed(p.level) * 100}%"></i></div>
+    </div>
+    <span class="gold">${fmt(p.gold)} ouro</span><button class="btn sm" data-howto>Como jogar</button><button class="btn sm" data-logout>Sair</button>
+    <div class="row">${chips.join('')}</div>
+  </div>`;
+  $('#hudIn .hud-name').textContent = p.name + (p.title ? ` · ${p.title}` : '');
+  const incoming = allDuels().filter(d => d.status === 'pending' && d.b === me).length + allDuels().filter(d => d.status === 'active').length;
+  const zoneReady = readyExp + QUESTS.filter(q => q.kill && !p.done.includes(q.id) && (p.qp?.[q.id] || 0) >= q.kill.n).length;
+  const badges = { arena: incoming, zonas: zoneReady, lutador: p.points || 0, mirante: (p.job && !isWorking(p)) ? 1 : 0 };
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${tab === k}" data-tab="${k}">${l}${badges[k] ? `<span class="badge">${badges[k]}</span>` : ''}</button>`).join('');
+}
+$('#hudIn').addEventListener('click', e => { if (e.target.closest('[data-howto]')) howtoModal(); if (e.target.closest('[data-logout]')) logout(); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; render(); window.scrollTo({ top: 0 }); });
+
+/* criação */
+function renderCreate() {
+  $('#hud').hidden = true;
+  if (!introSeen && !LS.get('zenite-intro')) { if ($('#intro').hidden) showIntro(() => { introSeen = true; LS.set('zenite-intro', '1'); renderCreate(); }, true); return; }
+  if ($('#createForm')) return;
+  selStats = { vida: 0, forca: 0, res: 0, ki: 0, vel: 0 };
+  let selCls = 'devorador';
+  const hashCode = (location.hash || '').replace('#', '').replace(/^convite-/i, '').toUpperCase();
+  $('#view').innerHTML = `
+  <section class="hero"><div class="label">Temporada 1 · A Fenda de Sarnak</div><h1>Zênite</h1>
+  <p>Sarnak, um lutador banido, rompeu o selo do topo do mundo antes da escolha do campeão. A energia desceu pelas cinco zonas e corrompeu tudo pelo caminho. Crie seu lutador e suba.</p></section>
+  <form id="createForm" class="stack" style="gap:22px">
+    <div class="sec"><div class="sec-h"><h2>1. Escolha a classe</h2><span class="muted small">Pode trocar depois, pagando nível × 200 de ouro</span></div>
+      <div class="cls-grid" id="clsGrid"></div><div class="panel" id="clsInfo"></div></div>
+    <div class="sec"><div class="sec-h"><h2>2. Distribua 15 pontos</h2><span class="muted small" id="ptsLeft"></span></div>
+      <div class="grid2"><div class="panel" id="ptsPanel"></div><div class="panel" id="derived"></div></div></div>
+    <div class="sec"><div class="sec-h"><h2>3. Identidade</h2></div>
+      <div class="grid2"><div class="panel">
+        <label class="stack" style="gap:6px"><span class="label">Nome do lutador</span><input type="text" id="cName" maxlength="24" required placeholder="Ex.: Kael da Planície"></label>
+        <label class="stack" style="gap:6px"><span class="label">Frase de apresentação (opcional)</span><input type="text" id="cMotto" maxlength="70" placeholder="Ex.: Do pampa ao topo do mundo."></label>
+        <label class="stack" style="gap:6px"><span class="label">Código de convite (opcional)</span><input type="text" id="cInvite" maxlength="6" value="${esc(hashCode.slice(0, 6))}" placeholder="Código de quem te chamou"></label>
+      </div><div class="panel"><p class="muted">Você começa no nível 1, com 100 de ouro e 2 poções pequenas, na cidade de Mirante. Seus golpes vêm da classe e evoluem com o uso: estágio II depois de 30 usos e estágio III depois de 100.</p><button class="btn primary" type="submit" id="cGo">Entrar em Zênite</button><p class="small muted" id="cErr"></p></div></div>
+    </div>
+  </form>`;
+  const drawCls = () => {
+    $('#clsGrid').innerHTML = Object.entries(CLASSES).map(([k, c]) => `<button type="button" class="cls-opt" data-cls="${k}" aria-pressed="${k === selCls}" style="--cc:${CCOLOR(k)}">${silSVG(k)}<span><b>${esc(c.name)}</b><br><span class="small muted">${esc(c.passive)} · ${esc(c.weak)}</span></span></button>`).join('');
+    const c = CLASSES[selCls];
+    $('#clsInfo').innerHTML = `<div class="panel-h"><h3 style="color:${CCOLOR(selCls)}">${esc(c.name)}</h3><span class="small muted">${Object.entries(c.bonus).map(([k, v]) => `+${v} ${STAT[k]}`).join(', ')}${c.weak ? ' · ' + esc(c.weak) : ''}</span></div>
+      <p><b>${esc(c.passive)}:</b> ${esc(c.pdesc)}</p>
+      <div class="grid3">${['rapido', 'especial', 'definitivo'].map(m => `<div class="move"><span class="label">${MOLDES[m].label} · ${MOLDES[m].ki} Ki</span><b>${esc(c.moves[m].n[0])}</b><span class="small muted">${esc(c.moves[m].e)}</span><span class="small faint">Evolui para ${esc(c.moves[m].n[1])} e ${esc(c.moves[m].n[2])}</span></div>`).join('')}</div>`;
+    drawPts();
+  };
+  const drawPts = () => {
+    const used = Object.values(selStats).reduce((a, b) => a + b, 0);
+    $('#ptsLeft').textContent = `${15 - used} pontos restantes`;
+    const c = CLASSES[selCls];
+    $('#ptsPanel').innerHTML = STATS.map(k => { const cb = (c.bonus[k] || 0) + (c.malus[k] || 0); const tot = 10 + selStats[k] + cb; return `<div class="stat-row"><span>${STAT[k]} <span class="small muted">${cb ? `(${cb > 0 ? '+' : ''}${cb} classe)` : ''}</span></span><b>${tot}</b><span class="row" style="gap:4px"><button type="button" class="btn sm" data-pt="${k}" data-d="-1" aria-label="Tirar ponto de ${STAT[k]}" ${selStats[k] ? '' : 'disabled'}>−</button><button type="button" class="btn sm" data-pt="${k}" data-d="1" aria-label="Pôr ponto em ${STAT[k]}" ${used < 15 ? '' : 'disabled'}>+</button></span></div>`; }).join('');
+    const t = {}; STATS.forEach(k => t[k] = 10 + selStats[k] + (c.bonus[k] || 0) + (c.malus[k] || 0));
+    $('#derived').innerHTML = `<span class="label">Como fica em combate</span>
+      <div class="stat-row"><span>Vida máxima</span><b>${hpFormula(t.vida, 1)}</b><span></span></div>
+      <div class="stat-row"><span>Ki máximo</span><b>${30 + t.ki * 5}</b><span></span></div>
+      <div class="stat-row"><span>Dano base</span><b>${t.forca * 2}</b><span></span></div>
+      <div class="stat-row"><span>Redução de dano</span><b>${(t.res * 0.8).toFixed(1).replace('.', ',')}</b><span></span></div>
+      <div class="stat-row"><span>Velocidade</span><b>${t.vel}</b><span class="small muted">iniciativa e esquiva</span></div>`;
+  };
+  $('#createForm').addEventListener('click', e => {
+    const c = e.target.closest('[data-cls]'); if (c) { selCls = c.dataset.cls; drawCls(); return; }
+    const b = e.target.closest('[data-pt]'); if (b) { const k = b.dataset.pt, d = +b.dataset.d; const used = Object.values(selStats).reduce((a, x) => a + x, 0); if (d > 0 && used >= 15) return; if (d < 0 && !selStats[k]) return; selStats[k] += d; drawPts(); }
+  });
+  $('#createForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('#cName').value.trim(); const used = Object.values(selStats).reduce((a, x) => a + x, 0);
+    if (name.length < 2) { $('#cErr').textContent = 'Dê um nome ao lutador (2 a 24 letras).'; return; }
+    if ([...players.values()].some(q => q.name.toLowerCase() === name.toLowerCase())) { $('#cErr').textContent = 'Já existe um lutador com esse nome. Escolha outro.'; return; }
+    if (used < 15) { $('#cErr').textContent = `Distribua os 15 pontos (faltam ${15 - used}).`; return; }
+    const inv = $('#cInvite').value.trim().toUpperCase(); const inviter = inv ? [...players.values()].find(q => q.inviteCode === inv) : null;
+    if (inv && !inviter) { $('#cErr').textContent = 'Código de convite não encontrado. Confira ou deixe em branco.'; return; }
+    const stats = {}; STATS.forEach(k => stats[k] = 10 + selStats[k]);
+    const p = { uid: me, name, motto: $('#cMotto').value.trim(), cls: selCls, stats, points: 0, level: 1, xp: 0, hp: 0, hpAt: now(), gold: 100, vault: 0, prof: null, profAt: 0, clsAt: 0, equip: {}, inv: { potP: 2 }, cos: { owned: [], aura: null, capa: null, faixa: null, ombreira: null, moldura: null }, cosStock: {}, lend: [], uses: {}, tactic: clone(DEFAULT_TACTIC), done: [], qp: {}, exps: [], job: null, recoverUntil: 0, bossCd: {}, daily: { date: todayKey(), wins: 0, kills: 0, exps: 0, claimed: [] }, titles: [], title: null, wins: 0, losses: 0, duelStreak: 0, saqueAt: 0, attackedAt: 0, pairs: {}, revenge: {}, reports: [], inviteCode: code6(), invitedBy: inviter ? inviter.uid : null, inviteRewarded: false, groupTries: {}, createdAt: now() };
+    p.hp = hpMaxOf(p);
+    $('#cGo').disabled = true;
+    try { await myRef.set(p); P = p; players.set(me, p); post(`${name}, ${CLASSES[selCls].name}, chegou a Mirante.`, 'join'); tab = 'zonas'; render(); window.scrollTo({ top: 0 }); }
+    catch (err) { $('#cGo').disabled = false; handleErr(err); }
+  });
+  drawCls();
+}
+
+/* aba Lutador */
+function vLutador() {
+  const p = P; const t = totals(p); const c = CLASSES[p.cls];
+  const moves = ['rapido', 'especial', 'definitivo'].map(m => { const mi = moveInfo(p.cls, m, p.uses?.[m]); const next = mi.stage === 1 ? 30 : mi.stage === 2 ? 100 : null; const pr = next ? Math.min(100, mi.uses / next * 100) : 100; return `<div class="move"><div class="spread"><span class="label">${MOLDES[m].label} · ${MOLDES[m].ki} Ki${m === 'definitivo' && p.level < 10 ? ' · libera no nível 10' : ''}</span><span class="stage">Estágio ${['I', 'II', 'III'][mi.stage - 1]}</span></div><b>${esc(mi.name)}</b><span class="small muted">${esc(mi.eff)}${mi.stage === 3 ? ' (50% mais forte)' : ''}</span><div class="prog"><i style="width:${pr}%"></i></div><span class="small faint">${next ? `${mi.uses}/${next} usos para ${esc(c.moves[m].n[mi.stage])}` : `${mi.uses} usos · estágio final`}</span></div>`; }).join('');
+  const equip = Object.entries(SLOTS).map(([s, S]) => { const it = p.equip[s]; let label = '—', note = ''; if (it) { if (it.tier === 'lendario') { label = LEGENDS[it.id].name; note = 'Lendário · ' + LEGENDS[it.id].desc; } else { label = `${S.name} ${TIERS[it.tier].name}`; note = `+${TIERS[it.tier].b} ${STAT[S.stat]}${it.tier === 'epico' && s === 'arma' ? ' · rouba 5 Ki por acerto' : ''}`; } } return `<div class="stat-row"><span>${S.name}</span><b class="small">${esc(label)}</b><span class="small muted">${esc(note)}</span></div>`; }).join('');
+  const lend = (p.lend || []).map(z => `<div class="item"><div class="grow"><span class="item-t">${esc(LEGENDS[z].name)}</span><span class="small muted">Lendário · ${esc(LEGENDS[z].desc)} · ${SLOTS[LEGENDS[z].slot].name}</span></div><button class="btn sm" data-act="equipLegend" data-z="${z}">Equipar</button></div>`).join('');
+  const cosKinds = { aura: 'Aura', capa: 'Capa', faixa: 'Faixa', ombreira: 'Ombreiras', moldura: 'Moldura' };
+  const cos = Object.entries(cosKinds).map(([k, l]) => { const owned = p.cos.owned.filter(id => COSM[id]?.kind === k); return `<label class="stat-row"><span>${l}</span><select data-cos="${k}" ${owned.length ? '' : 'disabled'}><option value="">${owned.length ? 'Nenhuma' : 'Nenhuma conquistada'}</option>${owned.map(id => `<option value="${id}" ${p.cos[k] === id ? 'selected' : ''}>${esc(COSM[id].name)}</option>`).join('')}</select><span></span></label>`; }).join('');
+  const tac = (editingTactic || p.tactic || DEFAULT_TACTIC);
+  const tacRows = [0, 1, 2, 3].map(i => { const r = tac[i] || { c: 'always', v: 0, a: 'basico' }; return `<div class="tac-row"><span class="label">${i + 1}º</span><select data-tc="${i}" aria-label="Condição ${i + 1}">${Object.entries(TAC_COND).map(([k, l]) => `<option value="${k}" ${r.c === k ? 'selected' : ''}>${l}</option>`).join('')}</select><input type="number" data-tv="${i}" value="${r.v}" min="0" max="300" aria-label="Valor ${i + 1}" ${['hpBelow', 'kiAtLeast', 'enemyHpBelow'].includes(r.c) ? '' : 'disabled'}><select data-ta="${i}" aria-label="Ação ${i + 1}">${Object.entries(TAC_ACT).map(([k, l]) => `<option value="${k}" ${r.a === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`; }).join('');
+  return `<div class="grid2" style="margin-bottom:22px">
+    <div class="panel"><div class="fighter-card"><div style="${p.cos.moldura ? `border:2px solid ${COSM[p.cos.moldura].color};border-radius:12px;padding:4px` : ''}">${silSVG(p.cls, p.cos)}</div><div class="stack" style="gap:6px">
+      <h2 id="pName"></h2><div class="cls-pill" style="color:${CCOLOR(p.cls)}">${esc(c.name)} · nível ${p.level}</div><p class="muted" id="pMotto"></p>
+      <div class="row small muted"><span>Poder ${fmt(power(p))}</span><span>·</span><span>${p.wins || 0} vitórias, ${p.losses || 0} derrotas</span>${p.prof ? `<span>·</span><span>${PROFS[p.prof].name}</span>` : ''}</div>
+      <div class="row">${p.titles.length ? `<label class="small">Título <select data-act-title>${['', ...p.titles].map(t => `<option value="${esc(t)}" ${p.title === t ? 'selected' : ''}>${t ? esc(t) : 'Nenhum'}</option>`).join('')}</select></label>` : '<span class="small faint">Títulos vêm de chefes, desafios e feitos.</span>'}</div>
+    </div></div>
+    <div class="row"><button class="btn sm" data-act="classModal">Trocar de classe</button><span class="small muted">Convite: <b style="color:var(--sun);letter-spacing:.1em">${esc(p.inviteCode)}</b></span><button class="btn sm" data-act="copyInvite">Copiar link de convite</button></div></div>
+    <div class="panel"><div class="panel-h"><h3>Status</h3>${p.points ? `<span class="chip warn">${p.points} pontos para distribuir</span>` : ''}</div>
+      ${STATS.map(k => `<div class="stat-row"><span>${STAT[k]}</span><b>${t[k]}</b><span class="row" style="gap:4px">${p.points ? `<button class="btn sm" data-act="alloc" data-s="${k}" aria-label="Pôr 1 ponto em ${STAT[k]}">+1</button>` : `<span class="small muted">${k === 'vida' ? 'vida ' + hpMaxOf(p) : k === 'ki' ? 'Ki ' + kiMaxOf(p) : k === 'forca' ? 'dano ' + t.forca * 2 : k === 'res' ? '−' + (t.res * 0.8).toFixed(1).replace('.', ',') + ' dano' : 'esquiva'}</span>`}</span></div>`).join('')}
+      <p class="small muted"><b>${esc(c.passive)}:</b> ${esc(c.pdesc)}</p>
+      <div class="row">${(p.inv.potP || 0) ? `<button class="btn sm" data-act="potOut" data-k="potP">Beber poção pequena (${p.inv.potP})</button>` : ''}${(p.inv.potG || 0) ? `<button class="btn sm" data-act="potOut" data-k="potG">Beber poção grande (${p.inv.potG})</button>` : ''}</div>
+    </div></div>
+  <div class="sec"><div class="sec-h"><h2>Golpes</h2><span class="small muted">Evoluem com o uso e mudam de nome</span></div><div class="grid3">${moves}</div></div>
+  <div class="grid2" style="margin-bottom:22px">
+    <div class="panel"><h3>Tática de defesa</h3><p class="small muted">Joga por você em saques, emboscadas, lutas automáticas e quando o tempo de um duelo acaba. A primeira regra que valer decide a ação.</p><div class="stack" style="gap:8px" id="tacForm">${tacRows}</div><div class="row"><button class="btn primary sm" data-act="saveTac">Salvar tática</button><button class="btn sm" data-act="resetTac">Voltar ao padrão</button></div></div>
+    <div class="panel"><h3>Equipamento</h3>${equip}${lend ? `<span class="label">Lendários</span><div class="list">${lend}</div>` : ''}<h3 style="margin-top:6px">Aparência</h3>${cos}</div>
+  </div>`;
+}
+/* aba Zonas */
+function vZonas() {
+  const p = P; const z = zoneSel; const Z = ZONES[z];
+  const zbtns = Object.entries(ZONES).map(([k, Zz]) => { const n = +k; const un = !Zz.locked && zoneUnlocked(p, n); return `<button class="btn sm ${n === z ? 'primary' : ''}" data-act="zone" data-z="${n}" ${un ? '' : 'disabled'} title="${Zz.locked ? 'Abre depois do teste' : un ? '' : 'Derrote Tarco para liberar'}">${n}. ${esc(Zz.name)} <span class="small">${Zz.range}</span></button>`; }).join('');
+  const qs = QUESTS.filter(q => q.zone === z);
+  const qItem = q => {
+    const done = p.done.includes(q.id); const avail = questAvailable(p, q);
+    let status = '', btn = '';
+    const reqTxt = !avail ? `Requer nível ${q.lvl}${(q.req || []).length ? ' e ' + q.req.map(r => QMAP[r].name).join(', ') : ''}` : '';
+    if (q.kill) {
+      const n = p.qp?.[q.id] || 0;
+      if (done) status = 'Concluída'; else if (avail) { status = `${ENEMIES[q.kill.e].name}: ${n}/${q.kill.n}`; if (n >= q.kill.n) btn = `<button class="btn primary sm" data-act="claimKill" data-q="${q.id}">Concluir</button>`; else btn = `<button class="btn sm" data-act="hunt" data-e="${q.kill.e}" data-mode="auto">Caçar</button>`; }
+    } else if (q.min) {
+      const exp = (p.exps || []).find(e => e.qid === q.id);
+      const d = dur(expDuration(p, q));
+      if (exp) { if (exp.endsAt <= now()) btn = `<button class="btn primary sm" data-act="claimExp" data-id="${exp.id}">Receber</button>`; else { status = `Em andamento · falta ${dur(exp.endsAt - now())}`; btn = (p.inv.racao ? `<button class="btn sm" data-act="racao" data-id="${exp.id}">Usar Ração (−15 min)</button>` : ''); } }
+      else if (done && !q.rep) status = 'Concluída';
+      else if (avail) { status = `${d}${q.min >= 60 ? ' · 25% de chance de emboscada' : ''}${done && q.type === 'expedicao' ? ' · repetição rende 40%' : ''}`; btn = `<button class="btn sm" data-act="startExp" data-q="${q.id}">${done ? 'Repetir' : 'Iniciar'}</button>`; }
+    } else if (q.type === 'chefe') {
+      const B = BOSSES[q.boss]; const cd = (p.bossCd?.[q.boss] || 0) > now();
+      if (avail) {
+        status = done ? (cd ? `Volta em ${dur(p.bossCd[q.boss] - now())}` : 'Disponível de novo · rende 50% e materiais') : `Nível ${B.lvl}${B.mechDesc ? ' · ' + B.mechDesc : ''}`;
+        if (!cd || !done) btn = `<button class="btn sm" data-act="boss" data-q="${q.id}" data-mode="auto">Lutar</button><button class="btn sm" data-act="boss" data-q="${q.id}" data-mode="rounds">Por rodadas</button><button class="btn sm danger" data-act="boss" data-q="${q.id}" data-mode="auto" data-desafio="1" title="Chefe com +25% nos status e +30% de vida; dá Essência de Desafio e título">Modo Desafio</button>`;
+      }
+    } else if (q.type === 'grupo') {
+      const g = groupState(q.boss); const B = BOSSES[q.boss];
+      if (avail) {
+        if (g && g.defeatedAt && (g.dmg || {})[me] && !(g.claimed || {})[me]) { status = 'O grupo venceu!'; btn = `<button class="btn primary sm" data-act="claimGroup" data-q="${q.id}">Receber recompensa</button>`; }
+        else if (g && g.defeatedAt && g.respawnAt > now()) status = `Derrotado · volta em ${dur(g.respawnAt - now())}`;
+        else {
+          const hp = g && !g.defeatedAt ? g.hp : null; const max = g?.max;
+          const parts = g && !g.defeatedAt ? Object.keys(g.dmg || {}).map(u => (g.names || {})[u] || '?') : [];
+          const tries = (p.groupTries?.[q.boss]?.date === todayKey()) ? p.groupTries[q.boss].n : 0;
+          status = `${B.name}, nível ${B.lvl}${hp != null ? ` · vida ${fmt(hp)}/${fmt(max)}` : ' · vida cheia'}${parts.length ? ' · no ataque: ' + parts.join(', ') : ''} · ${3 - tries} tentativas hoje`;
+          btn = `<button class="btn sm" data-act="group" data-q="${q.id}" ${tries >= 3 ? 'disabled' : ''}>Atacar (6 rodadas)</button>`;
+        }
+      }
+    }
+    const rw = q.rw; const rwTxt = [rw.xp ? fmt(rw.xp) + ' XP' : '', rw.gold ? fmt(rw.gold) + ' ouro' : '', rw.items ? Object.entries(rw.items).map(([k, v]) => `${v}× ${itemName(k)}`).join(', ') : '', rw.drop ? `${rw.drop} item${rw.drop > 1 ? 's' : ''} aleatório${rw.drop > 1 ? 's' : ''}` : '', rw.points ? '+1 ponto' : '', rw.equip ? 'arma Bronze' : '', rw.title ? `título "${rw.title}"` : '', rw.unlock ? 'libera a Zona 2' : ''].filter(Boolean).join(' · ');
+    return `<div class="item ${done && !q.rep && q.type !== 'chefe' && q.type !== 'grupo' ? 'done' : ''}"><div class="grow"><div class="row" style="gap:8px"><span class="tag ${q.type}">${TYPE_LABEL[q.type]}${q.night ? ' noturna' : ''}</span><span class="item-t">${esc(q.name)}</span></div><span class="small muted">${esc(q.desc)}</span><span class="small">${esc(status || reqTxt)}</span><span class="small faint">Recompensa: ${esc(rwTxt)}</span></div><div class="row">${btn}</div></div>`;
+  };
+  const enemies = Z.enemies.map(ek => { const E = ENEMIES[ek]; const lvl = huntLevel(p, ek); const noXp = lvl <= p.level - 3; return `<div class="item"><div class="grow"><span class="item-t">${esc(E.name)}</span><span class="small muted">Níveis ${E.min}–${E.max} · você enfrenta nível ${lvl}${noXp ? ' · sem XP para você' : ` · ${10 * lvl} XP`}</span></div><div class="row"><button class="btn sm" data-act="hunt" data-e="${ek}" data-mode="auto">Luta rápida</button><button class="btn sm" data-act="hunt" data-e="${ek}" data-mode="rounds" title="Você escolhe cada ação; rende 25% a mais">Por rodadas +25%</button></div></div>`; }).join('');
+  const d = daily(clone(p));
+  const dailies = DAILIES.map(x => { const ok = x.need(d); const cl = d.claimed.includes(x.id); return `<div class="item ${cl ? 'done' : ''}"><div class="grow"><span class="item-t">${x.name}</span><span class="small muted">${x.desc} · ${x.prog(d)} · ${fmt(20 * p.level)} XP e ${fmt(15 * p.level)} ouro</span></div>${cl ? '<span class="small muted">Feita</span>' : `<button class="btn sm ${ok ? 'primary' : ''}" data-act="daily" data-id="${x.id}" ${ok ? '' : 'disabled'}>Receber</button>`}</div>`; }).join('');
+  const groups = { historia: [], fixed: [], timed: [], boss: [] };
+  qs.forEach(q => { if (q.type === 'historia' || q.type === 'caca') groups.historia.push(q); else if (q.min) groups.timed.push(q); else groups.boss.push(q); });
+  return `<div class="row" style="margin-bottom:16px">${zbtns}</div>
+  <div class="sec"><div class="sec-h"><div><h2>${esc(Z.name)}</h2><p class="muted small" style="max-width:70ch">${esc(Z.desc)}</p></div><span class="small muted">${(p.exps || []).length}/2 expedições em andamento</span></div></div>
+  <div class="grid2" style="margin-bottom:22px">
+    <div class="panel"><h3>Caçar</h3><p class="small muted">Cada luta gasta vida, que regenera 20% por hora. Derrota custa 10% do ouro fora do cofre e 30 minutos de recuperação.</p><div class="list">${enemies}</div></div>
+    <div class="panel"><h3>Diárias</h3><p class="small muted">Renovam à meia-noite.</p><div class="list">${dailies}</div></div>
+  </div>
+  <div class="sec"><div class="sec-h"><h2>História e caça</h2></div><div class="list">${groups.historia.map(qItem).join('')}</div></div>
+  <div class="sec"><div class="sec-h"><h2>Expedições, coletas e entregas</h2><span class="small muted">Até 2 ao mesmo tempo</span></div><div class="list">${groups.timed.map(qItem).join('')}</div></div>
+  <div class="sec"><div class="sec-h"><h2>Chefes</h2><span class="small muted">Modo Desafio: chefe com +25% nos status e +30% de vida, Essência de Desafio e título. O primeiro a vencer o chefe da zona no Desafio leva o Lendário.</span></div><div class="list">${groups.boss.map(qItem).join('')}</div></div>`;
+}
+/* aba Mirante */
+function vMirante() {
+  const p = P; const disc = discount(p);
+  const working = isWorking(p);
+  let job;
+  if (!p.prof) job = p.level < 3 ? `<p class="muted">Profissões liberam no nível 3. Até lá, foque nas quests da Planície.</p>` : `<p class="muted">Escolha sua profissão. Pode trocar de graça uma vez por semana.</p>`;
+  else if (working) job = `<p>Trabalhando como <b>${PROFS[p.prof].name}</b>. Termina em <b>${dur(p.job.endsAt - now())}</b>.</p><p class="small muted">Enquanto trabalha, você não luta, não sai em expedição e não compra na loja. Você continua podendo ser saqueado.</p><button class="btn sm danger" data-act="cancelJob">Cancelar turno (sem salário)</button>`;
+  else if (p.job) job = `<p>Turno de ${p.job.hours} h concluído.</p><button class="btn primary" data-act="claimJob">Receber salário</button>`;
+  else job = `<p>${PROFS[p.prof].name} · <b>${fmt(salaryPerHour(p))} de ouro por hora</b>${testMode() ? ' · cada hora de turno dura 30 min no modo teste' : ''}</p><div class="row">${[1, 2, 4, 8].map(h => `<button class="btn sm" data-act="job" data-h="${h}">${h} h · ${fmt(salaryPerHour(p) * h)} ouro</button>`).join('')}</div><p class="small muted">Chance de achar um item no fim: ${10}% + 2% por hora.</p>`;
+  const profs = p.level >= 3 ? `<div class="list">${Object.entries(PROFS).map(([k, F]) => `<div class="item"><div class="grow"><span class="item-t">${F.name}${p.prof === k ? ' · atual' : ''}</span><span class="small muted">${esc(F.desc)}</span></div>${p.prof === k ? '' : `<button class="btn sm" data-act="prof" data-k="${k}">Escolher</button>`}</div>`).join('')}</div>` : '';
+  const cons = Object.entries(CONS).map(([k, C]) => `<div class="item"><div class="grow"><span class="item-t">${C.name}</span><span class="small muted">${C.desc} · você tem ${p.inv[k] || 0}</span></div><button class="btn sm" data-act="buyCons" data-k="${k}">${fmt(C.price * disc)} ouro</button></div>`).join('');
+  const eqRows = Object.entries(SLOTS).map(([s, S]) => `<tr><td>${S.name} <span class="small muted">+${STAT[S.stat]}</span></td>${['bronze', 'prata', 'ouro'].map(tk => { const T = TIERS[tk]; const has = p.equip[s]?.tier === tk; const mat = T.mat ? Object.entries(T.mat).map(([m, n]) => `${n}× ${itemName(m)}`).join(', ') : ''; return `<td>${has ? '<span class="small muted">Equipada</span>' : `<button class="btn sm" data-act="buyEq" data-s="${s}" data-t="${tk}" ${p.level < T.lvl ? 'disabled' : ''} title="${mat ? 'Exige ' + mat : ''}">${fmt(T.price * disc)}${mat ? ' + mat.' : ''}</button>`}</td>`; }).join('')}</tr>`).join('');
+  const cosShop = Object.entries(COSM).filter(([, C]) => C.price).map(([id, C]) => `<div class="item"><div class="grow"><span class="row" style="gap:8px"><span class="dot" style="background:${C.color}"></span><span class="item-t">${C.name}</span></span><span class="small muted">${{ aura: 'Aura', capa: 'Capa', faixa: 'Faixa', ombreira: 'Ombreiras', moldura: 'Moldura' }[C.kind]} · sem efeito em combate</span></div>${p.cos.owned.includes(id) ? '<span class="small muted">Sua</span>' : `<button class="btn sm" data-act="buyCos" data-id="${id}">${fmt(C.price * disc)} ouro</button>`}</div>`).join('');
+  const prestige = Object.entries(COSM).filter(([, C]) => C.prestige).map(([id, C]) => `<div class="item ${p.cos.owned.includes(id) ? '' : 'done'}"><div class="grow"><span class="row" style="gap:8px"><span class="dot" style="background:${C.color}"></span><span class="item-t">${C.name}</span></span><span class="small muted">${esc(C.prestige)}</span></div><span class="small ${p.cos.owned.includes(id) ? '' : 'muted'}">${p.cos.owned.includes(id) ? 'Conquistada' : 'Não está à venda'}</span></div>`).join('');
+  const vlv = p.vault || 0;
+  const vault = `<p>Cofre nível ${vlv}: protege <b>${[0, 20, 40, 60][vlv]}%</b> do seu ouro contra saques e derrotas. Ouro exposto agora: ${fmt(exposedGold(p))}.</p>${vlv < 3 ? `<button class="btn sm" data-act="vault">Subir para nível ${vlv + 1} · ${fmt([0, 300, 1500, 5000][vlv + 1])} ouro</button>` : ''}`;
+  let shop = '';
+  if (p.prof === 'ferreiro') shop = `<div class="panel"><h3>Forja</h3><p class="small muted">Você tem ${p.inv.minerio || 0} Minério e ${p.inv.essencia || 0} Essência de Desafio.</p>${Object.entries(SLOTS).map(([s, S]) => `<div class="item"><div class="grow"><span class="item-t">${S.name}</span></div><div class="row"><button class="btn sm" data-act="forgeB" data-s="${s}">Bronze · 2 Minério</button><button class="btn sm" data-act="forgeE" data-s="${s}">Épica · 1 Essência, 3 Minério, 500 ouro</button></div></div>`).join('')}<p class="small muted">Peça Épica: +7 no status do encaixe; a arma Épica também rouba 5 Ki a cada acerto.</p></div>`;
+  else if (p.prof === 'alfaiate') shop = `<div class="panel"><h3>Ateliê</h3><p class="small muted">Você tem ${p.inv.tecido || 0} Tecido. Peças repetidas ficam como estoque para vender na Banca.</p>${Object.entries(COSM).filter(([, C]) => C.craft).map(([id, C]) => `<div class="item"><div class="grow"><span class="row" style="gap:8px"><span class="dot" style="background:${C.color}"></span><span class="item-t">${C.name}</span></span><span class="small muted">${Object.entries(C.craft).map(([m, n]) => `${n}× ${itemName(m)}`).join(', ')}${(p.cosStock || {})[id] ? ` · estoque ${(p.cosStock || {})[id]}` : ''}</span></div><button class="btn sm" data-act="sew" data-id="${id}">Costurar</button></div>`).join('')}</div>`;
+  const invRows = Object.keys({ ...CONS, ...MATS }).filter(k => p.inv[k] > 0).map(k => `<div class="stat-row"><span>${esc(itemName(k))}</span><b>${p.inv[k]}</b><span></span></div>`).join('') + Object.entries(p.cosStock || {}).filter(([, n]) => n > 0).map(([id, n]) => `<div class="stat-row"><span>${esc(COSM[id].name)} (estoque)</span><b>${n}</b><span></span></div>`).join('');
+  const sellables = [...Object.keys({ ...CONS, ...MATS }).filter(k => p.inv[k] > 0), ...Object.entries(p.cosStock || {}).filter(([, n]) => n > 0).map(([id]) => id)];
+  const listings = banca.slice().sort((a, b) => b.ts - a.ts).map(L => `<div class="item"><div class="grow"><span class="item-t">${L.qty}× ${esc(L.isCos ? COSM[L.key]?.name : itemName(L.key))}</span><span class="small muted">Vendido por <span data-name="${esc(L.seller)}"></span>${esc(L.sellerName)} · ${ago(L.ts)}</span></div>${L.seller === me ? `<button class="btn sm" data-act="unlist" data-id="${L.id}">Retirar</button>` : `<button class="btn sm" data-act="buyL" data-id="${L.id}" ${p.gold < L.price ? 'disabled' : ''}>${fmt(L.price)} ouro</button>`}</div>`).join('');
+  return `<div class="sec"><div class="sec-h"><h2>Mirante</h2><span class="small muted">A cidade ao pé do Zênite</span></div></div>
+  <div class="grid2" style="margin-bottom:22px"><div class="panel"><h3>Trabalho</h3>${job}${profs}</div>
+  <div class="stack"><div class="panel"><h3>Cofre</h3>${vault}</div>${shop}<div class="panel"><h3>Inventário</h3>${invRows || '<p class="muted small">Vazio. Coletas, quests e trabalho trazem materiais e itens.</p>'}</div></div></div>
+  <div class="sec"><div class="sec-h"><h2>Loja</h2><span class="small muted">${p.prof === 'mercador' ? 'Preços com 15% de desconto de Mercador' : 'O ouro compra o básico. O que importa vem de conquista.'}</span></div>
+  <div class="grid2"><div class="panel"><h3>Consumíveis</h3><div class="list">${cons}</div></div>
+  <div class="panel"><h3>Equipamentos</h3><p class="small muted">Bronze +2, Prata +5 (nível 10, exige 3 Fragmentos), Ouro +10 (nível 20, exige 1 Núcleo de chefe).</p><div class="scroll-x"><table><thead><tr><th>Encaixe</th><th>Bronze</th><th>Prata</th><th>Ouro</th></tr></thead><tbody>${eqRows}</tbody></table></div></div></div></div>
+  <div class="grid2" style="margin-bottom:22px"><div class="panel"><h3>Visual</h3><div class="list">${cosShop}</div></div><div class="panel"><h3>Prestígio</h3><p class="small muted">Só se conquista. Ninguém compra.</p><div class="list">${prestige}</div></div></div>
+  <div class="sec"><div class="sec-h"><h2>Banca</h2><span class="small muted">Jogadores vendem para jogadores</span></div>
+  <div class="grid2"><div class="panel"><h3>Anunciar</h3>${sellables.length ? `<div class="row"><select id="sellKey" aria-label="Item">${sellables.map(k => `<option value="${k}">${esc(COSM[k]?.name || itemName(k))}</option>`).join('')}</select><input type="number" id="sellQty" min="1" value="1" style="width:80px" aria-label="Quantidade"><input type="number" id="sellPrice" min="1" value="50" style="width:110px" aria-label="Preço total em ouro"><button class="btn sm" data-act="list">Anunciar</button></div><p class="small muted">Quantidade e preço total em ouro.</p>` : '<p class="muted small">Nada para vender ainda.</p>'}</div>
+  <div class="panel"><h3>À venda</h3><div class="list">${listings || '<div class="empty">Nenhum anúncio. Cozinheiros, ferreiros e alfaiates vendem aqui o que produzem.</div>'}</div></div></div></div>`;
+}
+/* aba Arena */
+function vArena() {
+  const p = P;
+  const list = [...players.values()].sort((a, b) => power(b) - power(a));
+  const rows = list.map((q, i) => { const self = q.uid === me; const rev = (p.revenge || {})[q.uid] > now(); return `<tr><td class="num">${i + 1}</td><td><span class="row" style="gap:8px;flex-wrap:nowrap"><span class="dot" style="background:${CCOLOR(q.cls)}"></span><b>${esc(q.name)}</b>${self ? '<span class="chip">você</span>' : ''}${rev ? '<span class="chip bad">vingança</span>' : ''}</span></td><td>${esc(CLASSES[q.cls]?.name || '')}</td><td class="num">${q.level}</td><td class="num">${fmt(power(q))}</td><td class="num">${q.wins || 0}</td><td>${self ? '' : `<span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="view" data-u="${esc(q.uid)}">Ver</button><button class="btn sm" data-act="saque" data-u="${esc(q.uid)}">${rev ? 'Vingar' : 'Saquear'}</button><button class="btn sm" data-act="duelModal" data-u="${esc(q.uid)}">Duelo</button></span>`}</td></tr>`; }).join('');
+  const ds = allDuels().filter(d => ['pending', 'active'].includes(d.status) || (d.status === 'done' && d.applied && !d.applied[d.a === me ? 'a' : 'b']));
+  const duelItems = ds.map(d => { const incoming = d.b === me; const other = incoming ? d.aName : d.bName; let btn = ''; let st = '';
+    if (d.status === 'pending') { st = incoming ? `${esc(other)} te desafiou` : `Aguardando ${esc(other)} aceitar`; if (incoming) btn = `<button class="btn primary sm" data-act="acceptDuel" data-id="${d.id}">Aceitar</button><button class="btn sm" data-act="declineDuel" data-id="${d.id}">Recusar</button>`; else btn = `<button class="btn sm" data-act="declineDuel" data-id="${d.id}">Cancelar</button>`; }
+    else if (d.status === 'active') { st = `Duelo contra ${esc(other)} · rodada ${d.round}`; btn = `<button class="btn primary sm" data-act="openDuel" data-id="${d.id}">Entrar</button>`; }
+    else { st = `Duelo contra ${esc(other)} terminou`; btn = `<button class="btn primary sm" data-act="openDuel" data-id="${d.id}">Ver resultado</button>`; }
+    return `<div class="item"><div class="grow"><span class="item-t">${st}</span><span class="small muted">${d.stake ? `Aposta de ${fmt(d.stake)} ouro` : 'Amistoso'} · jogadas de 2 minutos</span></div><div class="row">${btn}</div></div>`; }).join('');
+  const reports = (p.reports || []).map((r, i) => `<div class="item"><div class="grow"><span class="item-t">${r.defenderWon ? 'Você repeliu' : 'Você foi saqueado por'} ${esc(r.fromName)}</span><span class="small muted">${r.defenderWon ? `+${fmt(r.gold)}` : `−${fmt(r.gold)}`} ouro · ${ago(r.ts)}</span></div><button class="btn sm" data-act="report" data-i="${i}">Relatório</button>${!r.defenderWon && (p.revenge || {})[r.from] > now() ? `<button class="btn sm danger" data-act="saque" data-u="${esc(r.from)}">Vingar</button>` : ''}</div>`).join('');
+  return `<div class="sec"><div class="sec-h"><h2>Arena</h2><span class="small muted">Saque: vence quem tiver a melhor tática. Atacar e perder custa 5% do seu ouro.</span></div></div>
+  <div class="panel" style="margin-bottom:22px"><h3>Ranking de poder</h3><div class="scroll-x"><table><thead><tr><th class="num">#</th><th>Lutador</th><th>Classe</th><th class="num">Nível</th><th class="num">Poder</th><th class="num">Vitórias</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${list.length < 2 ? '<p class="small muted">Por enquanto só você. Compartilhe o jogo e o seu código de convite com os amigos.</p>' : ''}</div>
+  <div class="grid2"><div class="panel"><h3>Duelos</h3><div class="list">${duelItems || '<div class="empty">Nenhum duelo aberto. Desafie alguém pelo ranking.</div>'}</div></div>
+  <div class="panel"><h3>Relatórios de saque</h3><div class="list">${reports || '<div class="empty">Ninguém te atacou ainda. Quando acontecer, o relatório e o direito de vingança aparecem aqui.</div>'}</div>
+  <p class="small muted">Regras: saque a cada 15 min; cada alvo só pode ser saqueado 1 vez por hora; o mesmo par, a cada 12 h; abaixo de 25% de vida ninguém saqueia nem é saqueado; abaixo do nível 5 há imunidade; diferença máxima de 5 níveis. Quem é saqueado ganha 12 h de vingança, com +10% de dano e sem esses limites.</p></div></div>`;
+}
+/* aba Mural */
+function vMural() {
+  const items = feed.map(f => `<div class="feed-item"><time>${ago(f.ts)}</time><span>${esc(f.text)}</span></div>`).join('');
+  return `<div class="sec"><div class="sec-h"><h2>Mural de Mirante</h2><span class="small muted">Tudo o que acontece em Zênite</span></div></div><div class="panel">${items || '<div class="empty">Nada por aqui ainda. Vitórias contra chefes, evoluções de golpe e saques aparecem neste mural.</div>'}</div>`;
+}
+/* aba Temporada */
+function vTemporada() {
+  const wk = seasonWeek();
+  const tl = [['Semanas 1–2', 'Zonas 1 e 2 abertas · período de teste', [1, 2]], ['Semanas 3–4', 'Zonas 3 e 4 abertas', [3, 4]], ['Semana 5', 'Zona 5 e cerco coletivo contra Sarnak', [5]], ['Semana 6', 'Grande Torneio', [6]]].map(([a, b, ws]) => `<div class="tl ${ws.includes(wk) ? 'now' : ''}"><span class="label">${a}${ws.includes(wk) ? ' · agora' : ''}</span><span>${b}</span></div>`).join('');
+  const L = world.lendarios || {};
+  const legends = Object.entries(LEGENDS).map(([z, Lg]) => `<div class="item"><div class="grow"><span class="item-t">${esc(Lg.name)}</span><span class="small muted">Zona ${Lg.zone} · ${esc(Lg.desc)}</span></div><span class="small">${L[z] ? 'Dono: ' + esc(L[z].name) : 'Ainda sem dono'}</span></div>`).join('');
+  return `<div class="sec"><div class="sec-h"><h2>Temporada 1 · A Fenda de Sarnak</h2><span class="row"><span class="small muted">Semana ${wk} de 6</span><button class="btn sm" data-act="intro">Rever a introdução</button></span></div>
+  <p class="story">O Zênite é o pico onde a energia do mundo se concentra. A cada geração, essa energia escolhe um campeão. Desta vez, Sarnak, um antigo lutador banido, rompeu o selo do topo antes da escolha. A energia desceu em cascata pelas cinco zonas e corrompeu as criaturas pelo caminho. Os lutadores sobem zona a zona para chegar até ele.</p>
+  <div class="timeline">${tl}</div></div>
+  <div class="grid2" style="margin-bottom:22px">
+    <div class="panel"><h3>Cerco contra Sarnak</h3><p class="muted small">Abre na semana 5. Vida gigante compartilhada, 3 ataques por dia, aberto a todos. Ele revida e derruba por 12 horas. Na fase 2 fica imune ao golpe mais usado do dia anterior; na fase 3 entra em fúria. Se não cair até o fim da semana 5, Sarnak vence a temporada.</p><div class="empty">O cerco ainda não começou.</div></div>
+    <div class="panel"><h3>Grande Torneio</h3><p class="muted small">Semana 6. Chaveamento automático, duelos por rodadas de 2 minutos. Campeão, vice e 3º lugar entram no Hall da Fama.</p><div class="empty">Hall da Fama vazio. A primeira temporada vai escrever os primeiros nomes.</div></div>
+  </div>
+  <div class="panel"><h3>Lendários da temporada</h3><p class="small muted">Um por zona. Só o primeiro a vencer o chefe da zona em Modo Desafio leva.</p><div class="list">${legends}</div></div>`;
+}
+
+/* ---------- eventos da página ---------- */
+$('#view').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const a = b.dataset.act; const d = b.dataset;
+  switch (a) {
+    case 'zone': zoneSel = +d.z; render(); break;
+    case 'hunt': startHunt(d.e, d.mode); break;
+    case 'boss': startBoss(d.q, d.mode, !!d.desafio); break;
+    case 'group': attackGroup(d.q); break;
+    case 'claimGroup': claimGroup(d.q); break;
+    case 'startExp': startExp(d.q); break;
+    case 'claimExp': claimExp(d.id); break;
+    case 'racao': useRacao(d.id); break;
+    case 'claimKill': claimKillQuest(d.q); break;
+    case 'daily': claimDaily(d.id); break;
+    case 'job': startJob(+d.h); break;
+    case 'claimJob': claimJob(); break;
+    case 'cancelJob': cancelJob(); break;
+    case 'prof': setProf(d.k); break;
+    case 'buyCons': buyCons(d.k); break;
+    case 'buyEq': buyEquip(d.s, d.t); break;
+    case 'buyCos': buyCos(d.id); break;
+    case 'vault': buyVault(); break;
+    case 'forgeB': forgeBronze(d.s); break;
+    case 'forgeE': forgeEpic(d.s); break;
+    case 'sew': sew(d.id); break;
+    case 'list': listItem($('#sellKey').value, +$('#sellQty').value, +$('#sellPrice').value); break;
+    case 'buyL': buyListing(d.id); break;
+    case 'unlist': cancelListing(d.id); break;
+    case 'alloc': allocate(d.s, 1); break;
+    case 'potOut': usePotionOut(d.k); break;
+    case 'equipLegend': equipLegend(d.z); break;
+    case 'classModal': classModal(); break;
+    case 'saveTac': saveTactic(); break;
+    case 'resetTac': editingTactic = null; save(p => { p.tactic = clone(DEFAULT_TACTIC); }); toast('Tática padrão restaurada.'); break;
+    case 'saque': doSaque(d.u); break;
+    case 'duelModal': duelModal(d.u); break;
+    case 'view': viewPlayer(d.u); break;
+    case 'acceptDuel': acceptDuel(d.id); break;
+    case 'declineDuel': declineDuel(d.id); break;
+    case 'openDuel': openDuel(d.id); break;
+    case 'report': reportModal(+d.i); break;
+    case 'intro': showIntro(() => {}, false); break;
+    case 'copyInvite': copyInvite(); break;
+    case 'tutGo': tab = d.tab; render(); window.scrollTo({ top: 0 }); break;
+    case 'tutClaim': claimTut(d.id); break;
+    case 'tutFinal': finishTut(); break;
+    case 'tutHide': LS.set('zenite-tut-hide', '1'); render(); break;
+  }
+});
+$('#view').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.cos !== undefined) { equipCos(t.dataset.cos, t.value); t.blur(); }
+  if (t.hasAttribute('data-act-title')) { const v = t.value; save(p => { p.title = v || null; }); t.blur(); }
+  if (t.dataset.tc !== undefined) { const row = t.closest('.tac-row'); const inp = row.querySelector('[data-tv]'); inp.disabled = !['hpBelow', 'kiAtLeast', 'enemyHpBelow'].includes(t.value); }
+  if (t.dataset.tc !== undefined || t.dataset.tv !== undefined || t.dataset.ta !== undefined) editingTactic = readTactic();
+});
+function readTactic() { return [0, 1, 2, 3].map(i => ({ c: $(`[data-tc="${i}"]`).value, v: clamp(+$(`[data-tv="${i}"]`).value || 0, 0, 300), a: $(`[data-ta="${i}"]`).value })); }
+function saveTactic() {
+  const rules = readTactic(); editingTactic = null;
+  document.activeElement && document.activeElement.blur();
+  save(p => { p.tactic = rules; markTut(p, 'tactic'); }); toast('Tática salva.', 'good');
+}
+function classModal() {
+  const cost = P.level * 200; const wait = (P.clsAt || 0) + 7 * DAY - now();
+  openModal(`<h2>Trocar de classe</h2><p class="muted">Custa <b>${fmt(cost)} de ouro</b> (nível × 200) e só pode ser feita uma vez a cada 7 dias. Seus pontos ficam; mudam os bônus, a fraqueza e os golpes, que recomeçam do estágio I.</p>${wait > 0 ? `<p class="chip bad">Próxima troca em ${dur(wait)}</p>` : ''}<div class="list">${Object.entries(CLASSES).filter(([k]) => k !== P.cls).map(([k, c]) => `<div class="item"><div class="grow"><span class="item-t" style="color:${CCOLOR(k)}">${esc(c.name)}</span><span class="small muted">${esc(c.passive)}: ${esc(c.pdesc)}</span></div><button class="btn sm" data-cc="${k}" ${wait > 0 || P.gold < cost ? 'disabled' : ''}>Trocar</button></div>`).join('')}</div><button class="btn" data-close>Fechar</button>`, m => { m.querySelectorAll('[data-cc]').forEach(b => b.onclick = () => changeClass(b.dataset.cc)); m.querySelector('[data-close]').onclick = closeModal; });
+}
+function duelModal(uid) {
+  const q = players.get(uid); if (!q) return;
+  openModal(`<h2>Desafiar ${esc(q.name)}</h2><p class="muted">Duelo por rodadas, com 2 minutos por jogada. Os dois lutam com vida cheia, sem poções. Quem não escolher a tempo joga pela própria tática de defesa.</p><label class="stack" style="gap:6px"><span class="label">Aposta em ouro (0 = amistoso)</span><input type="number" id="dStake" min="0" max="${P.gold}" value="0"></label><div class="row"><button class="btn primary" data-go>Enviar desafio</button><button class="btn" data-close>Cancelar</button></div>`, m => { m.querySelector('[data-go]').onclick = () => challenge(uid, +$('#dStake').value); m.querySelector('[data-close]').onclick = closeModal; });
+}
+function viewPlayer(uid) {
+  const q = players.get(uid); if (!q) return; const t = totals(q);
+  openModal(`<div class="fighter-card"><div>${silSVG(q.cls, q.cos || {})}</div><div class="stack" style="gap:4px"><h2 id="vpName"></h2><span class="cls-pill" style="color:${CCOLOR(q.cls)}">${esc(CLASSES[q.cls].name)} · nível ${q.level}</span><span class="muted small" id="vpMotto"></span><span class="small">Poder ${fmt(power(q))} · ${q.wins || 0} vitórias</span>${q.title ? `<span class="small" style="color:var(--sun)">${esc(q.title)}</span>` : ''}</div></div>
+  <div>${STATS.map(k => `<div class="stat-row"><span>${STAT[k]}</span><b>${t[k]}</b><span></span></div>`).join('')}</div>
+  <div class="small muted">Golpes: ${['rapido', 'especial', 'definitivo'].map(m => esc(moveInfo(q.cls, m, q.uses?.[m]).name)).join(' · ')}</div>
+  <div class="small muted">Equipamento: ${Object.entries(q.equip || {}).filter(([, v]) => v).map(([s, v]) => v.tier === 'lendario' ? LEGENDS[v.id].name : `${SLOTS[s].name} ${TIERS[v.tier].name}`).map(esc).join(', ') || 'nenhum'}</div>
+  <div class="row"><button class="btn" data-sq>Saquear</button><button class="btn" data-du>Desafiar para duelo</button><button class="btn" data-close>Fechar</button></div>`, m => { m.querySelector('#vpName').textContent = q.name; m.querySelector('#vpMotto').textContent = q.motto || ''; m.querySelector('[data-sq]').onclick = () => { closeModal(); doSaque(uid); }; m.querySelector('[data-du]').onclick = () => duelModal(uid); m.querySelector('[data-close]').onclick = closeModal; });
+}
+function reportModal(i) {
+  const r = (P.reports || [])[i]; if (!r) return;
+  openModal(`<h2>${r.defenderWon ? 'Saque repelido' : 'Você foi saqueado'}</h2><p class="muted">${esc(r.fromName)} · ${new Date(r.ts).toLocaleString('pt-BR')} · ${r.defenderWon ? '+' : '−'}${fmt(r.gold)} ouro. Sua tática de defesa lutou por você.</p><div class="b-log" style="height:auto;max-height:50vh">${r.lines.map(l => `<div>${esc(l)}</div>`).join('')}</div><button class="btn" data-close>Fechar</button>`, m => m.querySelector('[data-close]').onclick = closeModal);
+}
+
+/* ---------- introdução, primeiros passos e guia ---------- */
+let introSeen = false;
+function showIntro(onDone, creating) {
+  const el = $('#intro'); let i = 0;
+  const slides = [
+    () => `<div class="label">O mundo</div><h2>Zênite</h2><p>O Zênite é o pico onde a energia do mundo se concentra. A cada geração, essa energia escolhe um campeão entre os lutadores que chegam ao topo.</p><div class="intro-sils">${Object.keys(CLASSES).map(k => silSVG(k)).join('')}</div><p class="small">Seis classes, cada uma com sua forma de lutar e golpes que evoluem com o uso.</p>`,
+    () => `<div class="label">A Fenda</div><h2>Sarnak rompeu o selo</h2><p>Um antigo lutador banido abriu o topo antes da escolha. A energia desceu em cascata pelas cinco zonas e corrompeu tudo pelo caminho. Mirante, a cidade ao pé da montanha, é o último ponto seguro.</p><div class="ladder"><div><span>Topo do Zênite</span><span>Sarnak</span></div><div><span>Cidadela Partida</span><span>30–40</span></div><div><span>Floresta Rubra</span><span>20–30</span></div><div><span>Desfiladeiro dos Ecos</span><span>10–20</span></div><div><span>Planície do Despertar</span><span>1–10</span></div><div><span>Mirante</span><span>você começa aqui</span></div></div>`,
+    () => `<div class="label">Seu objetivo</div><h2>Chegue ao topo</h2><div class="goals"><div><span class="label">Juntos</span><b>Derrubem Sarnak</b><span class="small muted">No cerco da semana 5, todo o grupo ataca a mesma vida gigante. Se ele não cair até o fim da semana, Sarnak vence a temporada.</span></div><div><span class="label">Sozinho</span><b>Vença o Grande Torneio</b><span class="small muted">Na semana 6, duelos por rodadas decidem o campeão. Os três primeiros entram no Hall da Fama.</span></div></div><p class="small">A temporada dura 6 semanas. No fim, nível, ouro e equipamento recomeçam; títulos, aparência e o Hall da Fama ficam para sempre.</p>`
+  ];
+  const draw = () => {
+    const last = i === slides.length - 1;
+    el.innerHTML = `<div class="intro-in" role="dialog" aria-label="Introdução">${slides[i]()}<div class="intro-dots">${slides.map((_, j) => `<span class="${j === i ? 'on' : ''}"></span>`).join('')}</div><div class="row" style="justify-content:center">${i > 0 ? '<button class="btn" data-ib>Voltar</button>' : ''}<button class="btn primary" data-in>${last ? (creating ? 'Criar meu lutador' : 'Fechar') : 'Continuar'}</button>${!last ? '<button class="btn sm" data-is>Pular</button>' : ''}</div></div>`;
+    const done = () => { el.hidden = true; el.innerHTML = ''; onDone(); };
+    el.querySelector('[data-in]').onclick = () => { if (last) done(); else { i++; draw(); } };
+    const b = el.querySelector('[data-ib]'); if (b) b.onclick = () => { i--; draw(); };
+    const sk = el.querySelector('[data-is]'); if (sk) sk.onclick = done;
+    el.querySelector('[data-in]').focus();
+  };
+  el.hidden = false; draw();
+}
+function markTut(p, k) { p.tut = p.tut || {}; p.tut[k] = true; }
+const TUT = [
+  { id: 'win', name: 'Vença sua primeira luta', desc: 'Em Zonas, cace um Lobo da Poeira. Use "Por rodadas" para escolher cada golpe.', done: p => !!p.tut?.win, go: 'zonas', rw: { gold: 50 } },
+  { id: 'despertar', name: 'Conclua "O Despertar"', desc: 'Derrote 3 Lobos da Poeira e receba sua primeira quest de história.', done: p => (p.done || []).includes('z1-despertar'), go: 'zonas', rw: { gold: 50, items: { potP: 1 } } },
+  { id: 'tactic', name: 'Monte sua tática de defesa', desc: 'Ela luta por você em saques, emboscadas e lutas automáticas. Ajuste e salve em Lutador.', done: p => !!p.tut?.tactic, go: 'lutador', rw: { gold: 50 } },
+  { id: 'exp', name: 'Saia em expedição', desc: 'Expedições, coletas e entregas correm no tempo real enquanto você faz outras coisas.', done: p => !!p.tut?.exp, go: 'zonas', rw: { gold: 50 } },
+  { id: 'shop', name: 'Compre algo em Mirante', desc: 'Poções, uma peça Bronze ou o cofre, que protege parte do seu ouro.', done: p => !!p.tut?.shop, go: 'mirante', rw: { gold: 50 } },
+  { id: 'prof', name: 'Escolha uma profissão', desc: 'Libera no nível 3. Trabalhar rende ouro, mas deixa o lutador ocupado.', done: p => !!p.prof, go: 'mirante', rw: { gold: 100 } },
+  { id: 'social', name: 'Enfrente outro jogador', desc: 'Na Arena, desafie um amigo para duelo ou faça um saque.', done: p => !!p.tut?.social, go: 'arena', rw: { gold: 100 } }
+];
+function tutCard() {
+  const p = P; if (!p || p.tut?.finished || LS.get('zenite-tut-hide')) return '';
+  const claimed = p.tut?.claimed || [];
+  const n = claimed.length;
+  const all = n === TUT.length;
+  const steps = TUT.map(s => { const ok = s.done(p); const cl = claimed.includes(s.id); const rw = [s.rw.gold ? `${s.rw.gold} ouro` : '', s.rw.items ? '1 poção' : ''].filter(Boolean).join(' + ');
+    return `<div class="tut-step"><span class="tick ${cl ? 'claimed' : ok ? 'ok' : ''}" aria-hidden="true">${cl || ok ? '✓' : ''}</span><div><b>${esc(s.name)}</b><div class="small muted">${esc(s.desc)} · ${rw}</div></div>${cl ? '<span class="small muted">Feito</span>' : ok ? `<button class="btn primary sm" data-act="tutClaim" data-id="${s.id}">Receber</button>` : (tab === s.go ? '' : `<button class="btn sm" data-act="tutGo" data-tab="${s.go}">Ir</button>`)}</div>`; }).join('');
+  return `<section class="panel tut"><div class="panel-h"><h3>Primeiros passos · ${n}/${TUT.length}</h3><button class="btn sm" data-act="tutHide">Esconder</button></div>${all ? `<p>Você completou o básico de Zênite.</p><button class="btn primary" data-act="tutFinal">Receber o título "Iniciado do Zênite" e 200 de ouro</button>` : `<div>${steps}</div>`}</section>`;
+}
+function claimTut(id) {
+  const s = TUT.find(x => x.id === id); if (!s || !s.done(P)) return;
+  let lines; save(p => { p.tut = p.tut || {}; p.tut.claimed = p.tut.claimed || []; if (p.tut.claimed.includes(id)) return false; p.tut.claimed.push(id); lines = grant(p, s.rw, { quest: false }); });
+  writeQ.then(() => { if (lines) toast(`${s.name}: ${lines.join(' · ')}`, 'good'); flushFx(); });
+}
+function finishTut() {
+  save(p => { p.tut = p.tut || {}; if (p.tut.finished) return false; p.tut.finished = true; grant(p, { gold: 200, title: 'Iniciado do Zênite' }, { quest: false }); });
+  writeQ.then(() => { toast('Título "Iniciado do Zênite" conquistado.', 'good'); post(`${P.name} completou os primeiros passos em Zênite.`, 'tut'); flushFx(); });
+}
+function howtoModal() {
+  const hidden = !!LS.get('zenite-tut-hide') && !P?.tut?.finished;
+  openModal(`<h2>Como jogar</h2><div class="howto">
+  <details open><summary>O objetivo</summary><ul><li>Suba as zonas, do nível 1 ao 50, até o topo do Zênite.</li><li><b>Juntos:</b> derrubem Sarnak no cerco da semana 5.</li><li><b>Sozinho:</b> vença o Grande Torneio na semana 6.</li><li>A temporada dura 6 semanas. Na primeira, o <b>modo teste</b> deixa expedições e trabalho pela metade do tempo.</li></ul></details>
+  <details><summary>Lutas</summary><ul><li>Toda luta é por rodadas. Os dois escolhem uma ação ao mesmo tempo e o jogo revela as duas juntas.</li><li><b>Atacar</b> com o básico (0 Ki), o rápido (10 Ki), o especial (30 Ki) ou o definitivo (60 Ki, uma vez por luta, a partir do nível 10).</li><li><b>Defender</b> corta o dano pela metade e dá +10 de Ki. <b>Concentrar</b> dá +35 de Ki, mas você recebe 20% mais dano.</li><li>Velocidade decide quem age primeiro, a chance de esquiva e aumenta o crítico.</li><li><b>Luta rápida</b> usa sua tática de defesa. <b>Por rodadas</b>, você escolhe tudo e ganha 25% a mais.</li><li>A vida não volta sozinha no fim da luta: regenera 20% por hora, ou na hora com poção. Perder custa 10% do ouro fora do cofre e 30 minutos de recuperação.</li></ul></details>
+  <details><summary>Classes e golpes</summary><ul><li>Cada classe tem 3 golpes próprios. Eles evoluem com o uso: estágio II com 30 usos, estágio III com 100, e mudam de nome.</li><li>A cada nível você ganha 3 pontos de status para distribuir em Lutador.</li><li>Dá para trocar de classe uma vez por semana, pagando nível × 200 de ouro.</li></ul></details>
+  <details><summary>Zonas e quests</summary><ul><li><b>História e caça:</b> derrote os inimigos pedidos e receba a recompensa.</li><li><b>Expedições, coletas e entregas:</b> correm no tempo real, até 2 ao mesmo tempo. As de 1 hora ou mais têm 25% de chance de emboscada na volta.</li><li><b>Chefes:</b> cada um tem uma mecânica própria. O <b>Modo Desafio</b> deixa o chefe mais forte e dá Essência de Desafio; o primeiro a vencer o chefe da zona no Desafio leva o item Lendário.</li><li><b>Chefes de grupo:</b> vida compartilhada entre todos, 3 tentativas por dia.</li><li><b>Diárias:</b> três por dia, renovam à meia-noite.</li></ul></details>
+  <details><summary>Mirante</summary><ul><li><b>Trabalho:</b> escolha uma profissão no nível 3. Durante o turno você não luta nem compra, mas pode ser saqueado.</li><li><b>Loja:</b> Bronze só com ouro; Prata e Ouro também pedem materiais de chefes.</li><li><b>Cofre:</b> protege parte do seu ouro contra saques e derrotas.</li><li><b>Banca:</b> venda e compre itens de outros jogadores.</li></ul></details>
+  <details><summary>Arena</summary><ul><li><b>Saque:</b> ataque alguém, mesmo offline. As duas táticas de defesa lutam. Vencendo, você leva 5% a 10% do ouro exposto dele; perdendo, paga 5% do seu.</li><li>Quem é saqueado ganha 12 horas de <b>vingança</b>, com +10% de dano.</li><li><b>Duelo:</b> desafie um amigo, com ou sem aposta. Cada jogada tem 2 minutos; se o tempo acabar, a tática joga por você.</li><li>Só dá XP lutar contra quem tem nível igual ou maior que o seu.</li></ul></details>
+  </div><div class="row"><button class="btn" data-hi>Rever a introdução</button>${hidden ? '<button class="btn" data-ht>Mostrar primeiros passos</button>' : ''}<button class="btn primary" data-close>Fechar</button></div>`, m => {
+    m.querySelector('[data-close]').onclick = closeModal;
+    m.querySelector('[data-hi]').onclick = () => { closeModal(); showIntro(() => {}, false); };
+    const t = m.querySelector('[data-ht]'); if (t) t.onclick = () => { LS.set('zenite-tut-hide', ''); closeModal(); render(); };
+  });
+}
+
+/* ---------- ciclo ---------- */
+function afterRenderNames() { if (tab === 'lutador' && P) { const n = $('#pName'); if (n) n.textContent = P.name; const m = $('#pMotto'); if (m) m.textContent = P.motto || ''; } }
+const _render = render;
+render = function () { _render(); afterRenderNames(); };
+setInterval(() => { if (P && !battleOpen) { const ae = document.activeElement; if (!(ae && $('#view').contains(ae) && (ae.tagName === 'INPUT' || ae.tagName === 'SELECT'))) render(); else renderHud(); } }, 20000);
+
+/* ---------- servidor (Supabase) ---------- */
+let sb = null;
+function dbErr(code, message) { const e = new Error(message || code); e.code = code; return e; }
+function splitPath(path) { const parts = path.split('/'); return { col: parts.slice(0, -1).join('/'), id: parts[parts.length - 1] }; }
+function rid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+function mergeDeep(a, b) {
+  if (!a || typeof a !== 'object' || Array.isArray(a) || !b || typeof b !== 'object' || Array.isArray(b)) return clone(b);
+  const r = { ...a };
+  for (const k in b) r[k] = (r[k] && typeof r[k] === 'object' && !Array.isArray(r[k]) && b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) ? mergeDeep(r[k], b[k]) : clone(b[k]);
+  return r;
+}
+function makeDb(client) {
+  const cols = new Map();
+  function emit(st) { st.listeners.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } }); }
+  async function load(col, st) {
+    const { data, error } = await client.from('docs').select('id,data').eq('col', col);
+    if (error) { console.warn(error); return; }
+    st.docs = new Map(data.map(r => [r.id, r.data])); st.ready = true; emit(st);
+  }
+  function colState(col) {
+    let st = cols.get(col);
+    if (st) return st;
+    st = { listeners: new Set(), docs: new Map(), ready: false };
+    cols.set(col, st);
+    st.channel = client.channel('col-' + col.replace(/[^a-z0-9]/gi, '_'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'col=eq.' + col }, pl => {
+        if (pl.eventType === 'DELETE') { if (pl.old && pl.old.id) st.docs.delete(pl.old.id); }
+        else if (pl.new) st.docs.set(pl.new.id, pl.new.data);
+        emit(st);
+      })
+      .subscribe(status => { if (status === 'SUBSCRIBED') load(col, st); });
+    load(col, st);
+    st.poll = setInterval(() => load(col, st), 30000);
+    return st;
+  }
+  const snapDoc = (id, data) => ({ id, exists: data !== undefined && data !== null, data: () => data, metadata: {} });
+  function doc(path) {
+    const { col, id } = splitPath(path);
+    return {
+      id, path,
+      async get() { const { data, error } = await client.from('docs').select('data').eq('path', path).maybeSingle(); if (error) throw dbErr('unavailable', error.message); return snapDoc(id, data ? data.data : undefined); },
+      async set(obj) {
+        const body = clone(obj);
+        const st = cols.get(col); if (st) { st.docs.set(id, body); emit(st); }
+        const { error } = await client.from('docs').upsert({ path, col, id, data: body, updated_at: new Date().toISOString() });
+        if (error) throw dbErr(error.code === '42501' ? 'auth' : 'unavailable', error.message);
+      },
+      async update(patch) {
+        const body = clone(patch);
+        const st = cols.get(col); if (st && st.docs.has(id)) { st.docs.set(id, mergeDeep(st.docs.get(id), body)); emit(st); }
+        const { data, error } = await client.rpc('doc_update', { p_path: path, p_patch: body });
+        if (error) throw dbErr('unavailable', error.message);
+        if (data === false) throw dbErr('invalid_argument', 'documento inexistente');
+      },
+      async delete() {
+        const st = cols.get(col); if (st) { st.docs.delete(id); emit(st); }
+        const { error } = await client.from('docs').delete().eq('path', path);
+        if (error) throw dbErr('unavailable', error.message);
+      },
+      async acquire(o) {
+        const { data, error } = await client.rpc('doc_acquire', { p_path: path, p_holder: o.holder, p_ttl_ms: o.ttlMs || 30000 });
+        if (error) throw dbErr('unavailable', error.message);
+        return { acquired: !!data };
+      },
+      onSnapshot(next) {
+        const st = colState(col);
+        const fn = () => { if (st.ready) next(snapDoc(id, st.docs.get(id))); };
+        st.listeners.add(fn); fn();
+        return () => st.listeners.delete(fn);
+      }
+    };
+  }
+  function query(col, q) {
+    const run = st => {
+      let rows = [...st.docs.entries()].map(([id, data]) => ({ id, data }));
+      for (const [f, op, v] of q.where) rows = rows.filter(r => op === '==' ? r.data[f] === v : op === '!=' ? r.data[f] !== v : true);
+      if (q.order) { const [f, dir] = q.order; rows.sort((a, b) => ((a.data[f] ?? 0) - (b.data[f] ?? 0)) * (dir === 'desc' ? -1 : 1)); }
+      if (q.lim) rows = rows.slice(0, q.lim);
+      const docs = rows.map(r => snapDoc(r.id, r.data));
+      return { docs, size: docs.length, empty: !docs.length, metadata: {} };
+    };
+    const api = {
+      where: (f, op, v) => query(col, { ...q, where: [...q.where, [f, op, v]] }),
+      orderBy: (f, dir = 'asc') => query(col, { ...q, order: [f, dir] }),
+      limit: n => query(col, { ...q, lim: n }),
+      async get() { const st = colState(col); if (!st.ready) await load(col, st); return run(st); },
+      onSnapshot(next) { const st = colState(col); const fn = () => { if (st.ready) next(run(st)); }; st.listeners.add(fn); fn(); return () => st.listeners.delete(fn); },
+      doc: id => doc(col + '/' + (id || rid())),
+      async add(obj) { const ref = doc(col + '/' + rid()); await ref.set(obj); return ref; }
+    };
+    return api;
+  }
+  return { doc, collection: col => query(col, { where: [], order: null, lim: 0 }) };
+}
+
+function renderLogin(msg) {
+  const v = $('#view');
+  v.innerHTML = `<section class="hero"><div class="label">Temporada 1 · A Fenda de Sarnak</div><h1>Zênite</h1><p>Seis classes, cinco zonas e um topo do mundo em disputa. Entre para criar seu lutador e jogar com os amigos.</p></section>
+  <form class="panel login" id="loginForm">
+    <h2 id="lgTitle">Entrar</h2>
+    <label class="stack" style="gap:6px"><span class="label">E-mail</span><input type="email" id="lgEmail" autocomplete="email" required></label>
+    <label class="stack" style="gap:6px"><span class="label">Senha</span><input type="password" id="lgPass" autocomplete="current-password" minlength="6" required></label>
+    <button class="btn primary" type="submit" id="lgGo">Entrar</button>
+    <button class="btn sm" type="button" id="lgSwitch">Ainda não tenho conta</button>
+    <p class="small muted" id="lgMsg">${esc(msg || '')}</p>
+  </form>`;
+  let mode = 'in';
+  const sync = () => { $('#lgTitle').textContent = mode === 'in' ? 'Entrar' : 'Criar conta'; $('#lgGo').textContent = mode === 'in' ? 'Entrar' : 'Criar conta'; $('#lgSwitch').textContent = mode === 'in' ? 'Ainda não tenho conta' : 'Já tenho conta'; $('#lgPass').autocomplete = mode === 'in' ? 'current-password' : 'new-password'; };
+  $('#lgSwitch').onclick = () => { mode = mode === 'in' ? 'up' : 'in'; sync(); $('#lgMsg').textContent = ''; };
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('#lgEmail').value.trim(), password = $('#lgPass').value;
+    $('#lgGo').disabled = true; $('#lgMsg').textContent = mode === 'in' ? 'Entrando…' : 'Criando sua conta…';
+    try {
+      const r = mode === 'in' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
+      if (r.error) throw r.error;
+      if (!r.data.session) { $('#lgMsg').textContent = 'Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.'; mode = 'in'; sync(); return; }
+      startGame(r.data.session.user.id);
+    } catch (err) {
+      const m = String(err.message || '');
+      $('#lgMsg').textContent = /Invalid login/i.test(m) ? 'E-mail ou senha incorretos.' : /already registered/i.test(m) ? 'Esse e-mail já tem conta. Use "Já tenho conta".' : /Password should/i.test(m) ? 'A senha precisa ter pelo menos 6 caracteres.' : 'Não foi possível entrar: ' + m;
+    } finally { $('#lgGo').disabled = false; }
+  });
+  $('#lgEmail').focus();
+}
+async function logout() { try { await sb.auth.signOut(); } catch (e) { /* segue */ } location.reload(); }
+function copyInvite() {
+  const link = location.origin + location.pathname + '#convite-' + P.inviteCode;
+  const done = () => toast('Link de convite copiado. Mande para os amigos.', 'good');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, () => openModal(`<h2>Link de convite</h2><input type="text" value="${esc(link)}" readonly onfocus="this.select()"><button class="btn" data-close>Fechar</button>`, m => m.querySelector('[data-close]').onclick = closeModal));
+  else openModal(`<h2>Link de convite</h2><input type="text" value="${esc(link)}" readonly onfocus="this.select()"><button class="btn" data-close>Fechar</button>`, m => m.querySelector('[data-close]').onclick = closeModal);
+}
+async function boot() {
+  const cfg = window.ZENITE_CONFIG || {};
+  if (!window.supabase || !cfg.supabaseUrl || /COLE/.test(cfg.supabaseUrl)) { offline('O servidor do jogo ainda não foi configurado.'); return; }
+  sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { renderLogin(); return; }
+  startGame(data.session.user.id);
+}
+let started = false;
+function startGame(uid) {
+  if (started) return; started = true;
+  me = uid; db = makeDb(sb);
+  $('#view').innerHTML = '<section class="hero"><div class="label">Temporada 1 · A Fenda de Sarnak</div><h1>Zênite</h1><p class="muted small" id="bootMsg">Carregando o mundo de Zênite…</p></section>';
+  myRef = db.doc('players/' + me);
+  let gotPlayers = false;
+  db.collection('players').onSnapshot(s => {
+    players.clear(); s.docs.forEach(d => players.set(d.id, { ...d.data(), uid: d.id }));
+    const mine = players.get(me);
+    const firstMine = !P && mine;
+    if (mine) P = mine;
+    gotPlayers = true;
+    if (!booted) { booted = true; }
+    if (firstMine || P) render(); else if (!$('#createForm')) render();
+  }, e => { console.warn(e); offline('Não foi possível carregar o mundo de Zênite. Recarregue a página.'); });
+  db.collection('feed').orderBy('ts', 'desc').limit(60).onSnapshot(s => { feed = s.docs.map(d => d.data()); if (tab === 'mural') render(); }, e => console.warn(e));
+  db.collection('banca').onSnapshot(s => { banca = s.docs.map(d => ({ id: d.id, ...d.data() })); if (tab === 'mirante') render(); }, e => console.warn(e));
+  db.doc('world/lendarios').onSnapshot(s => { world.lendarios = s.exists ? s.data() : {}; if (tab === 'temporada') render(); }, e => console.warn(e));
+  for (const bk of Object.keys(BOSSES).filter(k => BOSSES[k].group)) db.doc('world/grupo-' + bk).onSnapshot(s => { world.groups[bk] = s.exists ? s.data() : null; if (tab === 'zonas') render(); }, e => console.warn(e));
+  const onDuels = which => s => { const arr = s.docs.map(d => ({ id: d.id, ...d.data() })); if (which === 'a') duelsA = arr; else duelsB = arr; if (P) { renderHud(); if (tab === 'arena') render(); }
+    const incoming = arr.filter(d => d.status === 'pending' && d.b === me && now() - d.createdAt < 60000);
+    incoming.forEach(d => { if (!seenChallenges.has(d.id)) { seenChallenges.add(d.id); toast(`${d.aName} te desafiou para um duelo. Veja na Arena.`); } });
+    arr.filter(d => d.status === 'active' && d.a === me && !duelView && !openedOnce.has(d.id)).forEach(d => { openedOnce.add(d.id); openDuel(d.id); }); };
+  db.collection('duels').where('a', '==', me).onSnapshot(onDuels('a'), e => console.warn(e));
+  db.collection('duels').where('b', '==', me).onSnapshot(onDuels('b'), e => console.warn(e));
+  setTimeout(() => { if (!gotPlayers) { booted = true; render(); } }, 6000);
+}
+const seenChallenges = new Set(), openedOnce = new Set();
+function offline(msg) { const m = $('#bootMsg'); if (m) m.textContent = msg; }
+boot().catch(e => { console.error(e); offline('Algo deu errado ao abrir o jogo. Recarregue a página.'); });
+})();
+</script>
+</body>
+</html>
