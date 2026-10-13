@@ -176,17 +176,17 @@ td.num, th.num { text-align: right; }
 .cls-opt b { font-family: var(--f-display); font-weight: 400; font-size: 1.05rem; color: var(--cc); }
 
 /* Batalha */
-.battle { position: fixed; inset: 0; z-index: 100; background: rgba(6,8,18,.96); display: grid; grid-template-rows: auto 1fr auto auto; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 12px); gap: 10px; overflow: hidden; }
+.battle { position: fixed; inset: 0; z-index: 100; background: var(--sky-0); display: grid; grid-template-rows: auto auto auto minmax(64px, 1fr); overflow-y: auto; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 12px); gap: 10px; overflow: hidden; }
 .b-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; max-width: 900px; width: 100%; margin: 0 auto; }
 .b-side { display: grid; gap: 4px; min-width: 0; }
 .b-side.r { text-align: right; }
 .b-side.r .bar > i { inset: 0 0 0 auto; }
 .b-name { font-family: var(--f-display); font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-vs { font-family: var(--f-display); color: var(--sun); font-size: 1.3rem; }
-.b-stage { position: relative; display: grid; grid-template-columns: 1fr minmax(120px, 220px) 1fr; align-items: center; max-width: 900px; width: 100%; margin: 0 auto; min-height: 240px; }
+.b-stage { position: relative; display: grid; grid-template-columns: 1fr minmax(120px, 220px) 1fr; align-items: center; max-width: 900px; width: 100%; margin: 0 auto; min-height: clamp(100px, 19vh, 240px); }
 .b-stage::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: 14%; height: 2px; background: linear-gradient(90deg, transparent, var(--line), transparent); }
 .b-f { position: relative; display: grid; justify-items: center; }
-.b-f .sil { width: min(150px, 34vw); height: auto; aspect-ratio: 4/5; max-width: 100%; transition: transform .25s ease, filter .25s; }
+.b-f .sil { width: min(150px, 30vw, 15vh); height: auto; aspect-ratio: 4/5; max-width: 100%; transition: transform .25s ease, filter .25s; }
 .b-f.r .sil { transform: scaleX(-1); }
 .b-f.lunge-l .sil { transform: translateX(28%) scale(1.06); }
 .b-f.lunge-r .sil { transform: scaleX(-1) translateX(28%) scale(1.06); }
@@ -210,10 +210,15 @@ td.num, th.num { text-align: right; }
 @keyframes ult { 0% { opacity: 0; letter-spacing: .5em; } 25% { opacity: 1; letter-spacing: .08em; } 80% { opacity: 1; } 100% { opacity: 0; } }
 .shake { animation: shake .4s; }
 @keyframes shake { 0%,100% { transform: translate(0); } 20% { transform: translate(-8px, 4px); } 40% { transform: translate(7px, -5px); } 60% { transform: translate(-5px, -3px); } 80% { transform: translate(4px, 5px); } }
-.b-log { max-width: 900px; width: 100%; margin: 0 auto; height: 116px; overflow-y: auto; font-size: .9rem; border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.b-log { order: 4; min-height: 0; max-width: 900px; width: 100%; margin: 0 auto; overflow-y: auto; font-size: .9rem; border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 .b-log .r { font-family: var(--f-display); color: var(--sun); margin-top: 4px; }
-.b-ctrl { max-width: 900px; width: 100%; margin: 0 auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.b-ctrl { order: 3; max-width: 560px; width: 100%; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.b-ctrl > :not(.act) { grid-column: 1 / -1; }
 .b-ctrl .btn { min-width: 0; }
+.b-ctrl .act { padding: 6px 4px; font-size: .95rem; }
+.b-ctrl .coach { font-size: .8rem; padding: 6px 10px; }
+@media (min-width: 700px) { .b-ctrl { max-width: 720px; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-height: 720px) { .battle { gap: 6px; } .b-top .bar-txt { font-size: .68rem; } .card { width: 84px; min-height: 46px; font-size: .76rem; } .b-name { font-size: 1rem; } }
 .act { display: grid; gap: 0; text-align: center; line-height: 1.15; }
 .act small { font-weight: 500; color: var(--muted); font-size: .72rem; }
 .b-res { font-family: var(--f-display); font-size: 1.5rem; text-align: center; }
@@ -367,7 +372,9 @@ const TIERS = {
 };
 const LEGENDS = {
   z1: { name: 'Estandarte de Tarco', slot: 'anel', zone: 1, bonus: { vida: 8, forca: 4 }, desc: '+8 Vida, +4 Força' },
-  z2: { name: 'Eco Eterno', slot: 'botas', zone: 2, bonus: { vel: 8 }, evade: 10, desc: '+8 Velocidade e +10% de esquiva' }
+  z2: { name: 'Eco Eterno', slot: 'botas', zone: 2, bonus: { vel: 8 }, evade: 10, desc: '+8 Velocidade e +10% de esquiva' },
+  z3: { name: 'Coroa de Espinhos', slot: 'amuleto', zone: 3, bonus: { ki: 10, res: 6 }, desc: '+10 Ki, +6 Resistência' },
+  z4: { name: 'Lâmina da Cidadela', slot: 'arma', zone: 4, bonus: { forca: 14 }, desc: '+14 Força' }
 };
 const CONS = {
   potP: { name: 'Poção de Vida pequena', price: 40, desc: '+30% da vida máxima' },
@@ -411,7 +418,15 @@ const ENEMIES = {
   morcego: { name: 'Morcego Ecoante', zone: 2, min: 10, max: 12, moves: ['Mordida', 'Grito', 'Onda Sonora', 'Eco Ensurdecedor'] },
   pedra: { name: 'Sentinela de Pedra', zone: 2, min: 12, max: 15, moves: ['Punho de Rocha', 'Muralha', 'Terremoto', 'Queda de Montanha'] },
   eremita: { name: 'Eremita Corrompido', zone: 2, min: 15, max: 17, moves: ['Bastão', 'Sussurro', 'Maldição', 'Juízo Final'] },
-  serpente: { name: 'Serpente da Fenda', zone: 2, min: 17, max: 19, moves: ['Bote', 'Veneno', 'Constrição', 'Mordida da Fenda'] }
+  serpente: { name: 'Serpente da Fenda', zone: 2, min: 17, max: 19, moves: ['Bote', 'Veneno', 'Constrição', 'Mordida da Fenda'] },
+  lince: { name: 'Lince Carmesim', zone: 3, min: 20, max: 22, moves: ['Arranhão', 'Salto', 'Garras Gêmeas', 'Caça Silenciosa'] },
+  raiz: { name: 'Raiz Sangrenta', zone: 3, min: 22, max: 25, moves: ['Chicote', 'Agarrar', 'Seiva Ácida', 'Floresta Viva'] },
+  cacador: { name: 'Caçador Perdido', zone: 3, min: 25, max: 27, moves: ['Lança', 'Armadilha', 'Tiro Certeiro', 'Última Caçada'] },
+  enxame: { name: 'Enxame Rubro', zone: 3, min: 27, max: 29, moves: ['Ferroada', 'Zumbido', 'Nuvem Rubra', 'Mil Ferrões'] },
+  soldado: { name: 'Soldado Partido', zone: 4, min: 30, max: 32, moves: ['Golpe de Espada', 'Escudada', 'Investida', 'Formação Quebrada'] },
+  atirador: { name: 'Atirador da Muralha', zone: 4, min: 32, max: 35, moves: ['Flecha', 'Rajada', 'Chuva de Flechas', 'Tiro da Muralha'] },
+  colossoferro: { name: 'Colosso de Ferro', zone: 4, min: 35, max: 37, moves: ['Punho de Ferro', 'Esmagar', 'Forja Viva', 'Bigorna'] },
+  cavaleiro: { name: 'Cavaleiro da Fenda', zone: 4, min: 37, max: 39, moves: ['Corte', 'Carga', 'Lâmina da Fenda', 'Juramento Sombrio'] }
 };
 const BOSSES = {
   golemMoinho: { name: 'Golem do Moinho', lvl: 6, zone: 1, moves: ['Pancada', 'Pá de Moinho', 'Moinho Giratório', 'Desmoronar'], drop: { minerio: 2 } },
@@ -419,13 +434,19 @@ const BOSSES = {
   tarco: { name: 'Grão-Bandido Tarco', lvl: 10, zone: 1, mech: 'tarco', mechDesc: 'Rouba o Ki de quem concentra na rodada em que ele ataca.', moves: ['Lâmina Torta', 'Rasteira', 'Saque Relâmpago', 'Rei da Estrada'], drop: { minerio: 2 }, zoneBoss: 'z1' },
   colosso: { name: 'Colosso Rachado', lvl: 16, zone: 2, moves: ['Punho Rachado', 'Pisão', 'Estilhaços', 'Desabar'], drop: { fragmento: 1 } },
   serpenteMae: { name: 'Serpente-Mãe', lvl: 19, zone: 2, group: true, moves: ['Bote', 'Ninhada', 'Veneno Antigo', 'Abraço da Fenda'], drop: { fragmento: 1 } },
-  maeEco: { name: 'Mãe-Eco', lvl: 20, zone: 2, mech: 'eco', mechDesc: 'Devolve o dano de qualquer golpe repetido em rodadas seguidas.', moves: ['Lamento', 'Ressonância', 'Coro Partido', 'Silêncio Eterno'], drop: { fragmento: 2, nucleo: 1 }, zoneBoss: 'z2' }
+  maeEco: { name: 'Mãe-Eco', lvl: 20, zone: 2, mech: 'eco', mechDesc: 'Devolve o dano de qualquer golpe repetido em rodadas seguidas.', moves: ['Lamento', 'Ressonância', 'Coro Partido', 'Silêncio Eterno'], drop: { fragmento: 2, nucleo: 1 }, zoneBoss: 'z2' },
+  guardia: { name: 'Guardiã do Bosque', lvl: 25, pow: 1.1, zone: 3, moves: ['Galho', 'Casca Dura', 'Raízes Presas', 'Floresta Inteira'], drop: { erva: 4, tecido: 2 } },
+  feraSeiva: { name: 'Fera da Seiva', lvl: 28, zone: 3, group: true, moves: ['Mordida', 'Seiva Quente', 'Investida Rubra', 'Fúria da Mata'], drop: { tecido: 3 } },
+  rainha: { name: 'Rainha Espinhosa', lvl: 30, pow: 1.1, zone: 3, mech: 'veneno', mechDesc: 'Veneno: no fim de cada rodada você perde 4% da vida máxima, a menos que tenha defendido.', moves: ['Espinho', 'Abraço de Espinhos', 'Jardim Venenoso', 'Coroa Viva'], drop: { nucleo: 1, minerio: 3 }, zoneBoss: 'z3' },
+  vorn: { name: 'Comandante Vorn', lvl: 35, pow: 1.15, zone: 4, moves: ['Espadada', 'Ordem de Ataque', 'Muralha de Escudos', 'Última Ordem'], drop: { minerio: 4, fragmento: 1 } },
+  gargula: { name: 'Gárgula Ancestral', lvl: 38, zone: 4, group: true, moves: ['Garra de Pedra', 'Voo Rasante', 'Grito da Torre', 'Queda do Campanário'], drop: { fragmento: 2 } },
+  arautoSarnak: { name: 'Arauto de Sarnak', lvl: 40, pow: 1.15, zone: 4, mech: 'escudo', mechDesc: 'Escudo: a cada 3 rodadas ele bloqueia ataques básicos e rápidos. Guarde especiais e definitivos para essas rodadas.', moves: ['Lâmina Negra', 'Selo Partido', 'Eco de Sarnak', 'Voz do Topo'], drop: { nucleo: 2 }, zoneBoss: 'z4' }
 };
 const ZONES = {
   1: { name: 'Planície do Despertar', range: '1–10', enemies: ['lobo', 'bandido', 'golem', 'gaviao'], desc: 'Campos abertos ao pé do Zênite, onde a energia caída de Sarnak despertou as primeiras criaturas.' },
   2: { name: 'Desfiladeiro dos Ecos', range: '10–20', enemies: ['morcego', 'pedra', 'eremita', 'serpente'], desc: 'Paredões que repetem cada grito. Aqui a corrupção aprendeu a imitar quem luta.' },
-  3: { name: 'Floresta Rubra', range: '20–30', locked: true },
-  4: { name: 'Cidadela Partida', range: '30–40', locked: true },
+  3: { name: 'Floresta Rubra', range: '20–30', enemies: ['lince', 'raiz', 'cacador', 'enxame'], desc: 'Uma mata que bebeu a energia de Sarnak e ficou vermelha. Tudo aqui tem espinho, ferrão ou fome.' },
+  4: { name: 'Cidadela Partida', range: '30–40', enemies: ['soldado', 'atirador', 'colossoferro', 'cavaleiro'], desc: 'A antiga fortaleza que guardava o caminho do topo. A guarnição inteira agora serve a Sarnak.' },
   5: { name: 'Topo do Zênite', range: '40–50', locked: true }
 };
 const QUESTS = [
@@ -453,7 +474,33 @@ const QUESTS = [
   { id: 'z2-colosso', zone: 2, name: 'O Colosso Rachado', type: 'chefe', lvl: 15, req: ['z2-silencio'], boss: 'colosso', rw: { xp: 1500, gold: 500, items: { fragmento: 1 } }, desc: 'Um gigante de pedra, rachado pela energia de Sarnak.' },
   { id: 'z2-escamas', zone: 2, name: 'Escamas da Fenda', type: 'caca', lvl: 17, kill: { e: 'serpente', n: 5 }, rw: { xp: 1200, gold: 450 }, desc: 'As serpentes saem da própria Fenda.' },
   { id: 'z2-covil', zone: 2, name: 'Covil da Serpente-Mãe', type: 'grupo', lvl: 18, boss: 'serpenteMae', rw: { xp: 2000, gold: 700, items: { fragmento: 1 } }, desc: 'Chefe para 2 ou 3 jogadores, com vida compartilhada.' },
-  { id: 'z2-maeeco', zone: 2, name: 'A Mãe-Eco', type: 'chefe', lvl: 20, req: ['z2-colosso', 'z2-ecos4'], boss: 'maeEco', rw: { xp: 4500, gold: 1800, items: { fragmento: 2, nucleo: 1 }, title: 'Silenciador dos Ecos' }, desc: 'A voz que comanda o desfiladeiro.' }
+  { id: 'z2-maeeco', zone: 2, name: 'A Mãe-Eco', type: 'chefe', lvl: 20, req: ['z2-colosso', 'z2-ecos4'], boss: 'maeEco', rw: { xp: 4500, gold: 1800, items: { fragmento: 2, nucleo: 1 }, title: 'Silenciador dos Ecos' }, desc: 'A voz que comanda o desfiladeiro.' },
+  { id: 'z3-rubra1', zone: 3, name: 'A Mata Vermelha I', type: 'historia', lvl: 20, kill: { e: 'lince', n: 4 }, rw: { xp: 1200, gold: 400 }, desc: 'Os linces atacam quem pisa na floresta. Abra caminho.' },
+  { id: 'z3-rubra2', zone: 3, name: 'A Mata Vermelha II', type: 'entrega', lvl: 21, req: ['z3-rubra1'], min: 30, rw: { xp: 900, gold: 450 }, desc: 'Leve a muda de Mirante até a clareira antiga.' },
+  { id: 'z3-rubra3', zone: 3, name: 'A Mata Vermelha III', type: 'historia', lvl: 23, req: ['z3-rubra2'], kill: { e: 'raiz', n: 5 }, rw: { xp: 2000, gold: 650 }, desc: 'As raízes estrangulam a clareira. Corte todas.' },
+  { id: 'z3-rubra4', zone: 3, name: 'A Mata Vermelha IV', type: 'historia', lvl: 26, req: ['z3-rubra3'], kill: { e: 'cacador', n: 4 }, rw: { xp: 3000, gold: 900 }, desc: 'Os caçadores perdidos ainda caçam, mas agora caçam lutadores.' },
+  { id: 'z3-seiva', zone: 3, name: 'Seiva e Fibra', type: 'coleta', lvl: 20, min: 45, rep: true, rw: { xp: 400, items: { erva: 4, tecido: 2 } }, desc: 'Seiva para os cozinheiros e fibra para os alfaiates.' },
+  { id: 'z3-ferro', zone: 3, name: 'Ferro Enterrado', type: 'coleta', lvl: 22, min: 60, rep: true, rw: { xp: 500, items: { minerio: 4 } }, desc: 'Armas antigas enterradas sob as raízes.' },
+  { id: 'z3-enxame', zone: 3, name: 'Fim do Enxame', type: 'caca', lvl: 27, kill: { e: 'enxame', n: 6 }, rw: { xp: 3500, gold: 1000 }, desc: 'O zumbido não deixa ninguém dormir em Mirante.' },
+  { id: 'z3-trilha', zone: 3, name: 'Trilha dos Espinhos', type: 'expedicao', lvl: 21, min: 180, rep: true, rw: { xp: 2400, drop: 2 }, desc: 'Atravesse a mata sem deixar a trilha.' },
+  { id: 'z3-noite', zone: 3, name: 'Noite na Floresta Rubra', type: 'expedicao', night: true, lvl: 23, min: 480, rep: true, rw: { xp: 4000, gold: 1400, drop: 2 }, desc: 'Expedição noturna. Recompensa maior, emboscada mais difícil.' },
+  { id: 'z3-coracao', zone: 3, name: 'Coração da Mata', type: 'expedicao', lvl: 24, min: 360, rep: true, rw: { xp: 5000, points: 1 }, desc: 'Chegue à árvore de onde a corrupção se espalha.' },
+  { id: 'z3-guardia', zone: 3, name: 'A Guardiã do Bosque', type: 'chefe', lvl: 25, req: ['z3-rubra3'], boss: 'guardia', rw: { xp: 4000, gold: 1200, items: { erva: 4, tecido: 2 } }, desc: 'Ela protegia a floresta. Agora protege a corrupção.' },
+  { id: 'z3-fera', zone: 3, name: 'A Fera da Seiva', type: 'grupo', lvl: 27, boss: 'feraSeiva', rw: { xp: 5000, gold: 1600, items: { tecido: 3 } }, desc: 'Chefe para 2 ou 3 jogadores, com vida compartilhada.' },
+  { id: 'z3-rainha', zone: 3, name: 'A Rainha Espinhosa', type: 'chefe', lvl: 30, req: ['z3-guardia', 'z3-rubra4'], boss: 'rainha', rw: { xp: 10000, gold: 3500, items: { nucleo: 1 }, title: 'Podador da Rainha' }, desc: 'A senhora da Floresta Rubra guarda o caminho da Cidadela.' },
+  { id: 'z4-muro1', zone: 4, name: 'Muralha Quebrada I', type: 'historia', lvl: 30, kill: { e: 'soldado', n: 5 }, rw: { xp: 3500, gold: 1100 }, desc: 'A guarda da Cidadela não reconhece mais aliados.' },
+  { id: 'z4-muro2', zone: 4, name: 'Muralha Quebrada II', type: 'entrega', lvl: 31, req: ['z4-muro1'], min: 40, rw: { xp: 2500, gold: 1200 }, desc: 'Leve o mapa da muralha ao último vigia leal.' },
+  { id: 'z4-muro3', zone: 4, name: 'Muralha Quebrada III', type: 'historia', lvl: 33, req: ['z4-muro2'], kill: { e: 'atirador', n: 5 }, rw: { xp: 5500, gold: 1600 }, desc: 'Os atiradores mantêm o pátio sob mira.' },
+  { id: 'z4-muro4', zone: 4, name: 'Muralha Quebrada IV', type: 'historia', lvl: 36, req: ['z4-muro3'], kill: { e: 'colossoferro', n: 4 }, rw: { xp: 7500, gold: 2200 }, desc: 'Os colossos da forja ainda trabalham. Para Sarnak.' },
+  { id: 'z4-arsenal', zone: 4, name: 'Arsenal Abandonado', type: 'coleta', lvl: 30, min: 60, rep: true, rw: { xp: 900, items: { minerio: 5, tecido: 2 } }, desc: 'Peças de armadura e tecido de estandartes antigos.' },
+  { id: 'z4-cripta', zone: 4, name: 'Cripta da Guarnição', type: 'coleta', lvl: 33, min: 90, rep: true, rw: { xp: 1200, items: { fragmento: 1, erva: 3 } }, desc: 'Fragmentos de energia presos nas tumbas.' },
+  { id: 'z4-juramento', zone: 4, name: 'Juramento Quebrado', type: 'caca', lvl: 37, kill: { e: 'cavaleiro', n: 6 }, rw: { xp: 9000, gold: 2600 }, desc: 'Os cavaleiros juraram defender o topo. Juraram errado.' },
+  { id: 'z4-ronda', zone: 4, name: 'Ronda das Torres', type: 'expedicao', lvl: 31, min: 240, rep: true, rw: { xp: 6000, drop: 2 }, desc: 'Percorra as quatro torres da Cidadela.' },
+  { id: 'z4-noite', zone: 4, name: 'Noite na Cidadela', type: 'expedicao', night: true, lvl: 33, min: 480, rep: true, rw: { xp: 9000, gold: 3000, drop: 2 }, desc: 'Expedição noturna. Recompensa maior, emboscada mais difícil.' },
+  { id: 'z4-salao', zone: 4, name: 'Salão do Trono Vazio', type: 'expedicao', lvl: 35, min: 420, rep: true, rw: { xp: 11000, points: 1 }, desc: 'O trono está vazio. Descubra para onde foi quem sentava nele.' },
+  { id: 'z4-vorn', zone: 4, name: 'Comandante Vorn', type: 'chefe', lvl: 35, req: ['z4-muro3'], boss: 'vorn', rw: { xp: 9000, gold: 3000, items: { minerio: 4, fragmento: 1 } }, desc: 'O comandante da Cidadela entregou as chaves a Sarnak.' },
+  { id: 'z4-gargula', zone: 4, name: 'A Gárgula Ancestral', type: 'grupo', lvl: 37, boss: 'gargula', rw: { xp: 11000, gold: 3500, items: { fragmento: 2 } }, desc: 'Chefe para 2 ou 3 jogadores, com vida compartilhada.' },
+  { id: 'z4-arauto', zone: 4, name: 'O Arauto de Sarnak', type: 'chefe', lvl: 40, req: ['z4-vorn', 'z4-muro4'], boss: 'arautoSarnak', rw: { xp: 20000, gold: 7000, items: { nucleo: 2 }, title: 'Quebra-Selos' }, desc: 'A voz de Sarnak na terra. Depois dele, só resta o topo.' },
 ];
 const QMAP = Object.fromEntries(QUESTS.map(q => [q.id, q]));
 const TYPE_LABEL = { historia: 'História', caca: 'Caça', coleta: 'Coleta', entrega: 'Entrega', expedicao: 'Expedição', chefe: 'Chefe', grupo: 'Grupo' };
@@ -494,7 +541,8 @@ const vaultProt = p => [0, 0.2, 0.4, 0.6][p.vault || 0];
 const exposedGold = p => Math.floor((p.gold || 0) * (1 - vaultProt(p)));
 function discount(p) { return p.prof === 'mercador' ? 0.85 : 1; }
 function daily(p) { const k = todayKey(); if (!p.daily || p.daily.date !== k) p.daily = { date: k, wins: 0, kills: 0, exps: 0, claimed: [] }; return p.daily; }
-function zoneUnlocked(p, z) { return z === 1 || (z === 2 && (p.done || []).includes('z1-tarco')); }
+const ZONE_GATE = { 2: 'z1-tarco', 3: 'z2-maeeco', 4: 'z3-rainha' };
+function zoneUnlocked(p, z) { return z === 1 || (!!ZONE_GATE[z] && (p.done || []).includes(ZONE_GATE[z])); }
 
 /* ---------- combate ---------- */
 function fighterFromPlayer(p, o = {}) {
@@ -513,7 +561,7 @@ function fighterFromPlayer(p, o = {}) {
   };
 }
 function npcFighter(name, lvl, o = {}) {
-  const per = (10 + (15 + 3 * (lvl - 1)) / 5) * 0.9 * (o.boss ? 1.12 : 1) * (o.desafio ? 1.25 : 1) * (o.hard ? 1.15 : 1);
+  const per = (10 + (15 + 3 * (lvl - 1)) / 5 + (lvl > 20 ? 10 : 0)) * (o.pow || 1) * 0.9 * (o.boss ? 1.12 : 1) * (o.desafio ? 1.25 : 1) * (o.hard ? 1.15 : 1);
   let hpM = Math.round(hpFormula(per, lvl) * (o.boss ? 1.5 : 1) * (o.desafio ? 1.3 : 1) * (o.hpMult || 1));
   const moves = { rapido: { name: o.moves?.[1] || 'Investida', stage: 1 }, especial: { name: o.moves?.[2] || 'Fúria', stage: 1 }, definitivo: { name: o.moves?.[3] || 'Golpe Final', stage: 1 } };
   return { id: 'npc', name, cls: null, lvl, isNpc: true, hpMax: hpM, hp: o.hp != null ? o.hp : hpM, kiMax: 30 + per * 5, ki: 30 + per * 5, str: per, res: per, vel: per, extraEvade: 0, moves, mech: o.mech || null, basicName: o.moves?.[0] || 'Ataque', inv: { potP: 0, potG: 0, elixir: 0 }, solo: true, dmgMult: 1, carga: 0, ritmo: 0, defUsed: false, buffNext: 0, debuffRounds: 0, debuffVal: 0, evadeNext: 0, evadeNow: 0, lastMove: null, used: {} };
@@ -570,6 +618,8 @@ function resolveRound(A, B, actA, actB, ctx) {
     F.shield = (F.cls === 'sentinela' && a.k === 'atk' && a.m === 'rapido') ? 0.2 * (F.moves.rapido.stage === 3 ? 1.5 : 1) : 0;
     if (a.k !== 'atk' && F.cls === 'danca') F.ritmo = 0;
   }
+  A.rn = B.rn = ctx.round;
+  for (const X of [A, B]) if (X.mech === 'escudo' && ctx.round % 3 === 0 && X.hp > 0) push({ t: 'steal', who: side(X), txt: `${X.name} ergue o escudo: básicos e rápidos não passam nesta rodada.` });
   const entries = [[A, B, aA], [B, A, aB]];
   const prio = x => (x[0].cls === 'batedor' && x[2].k === 'atk' && x[2].m === 'rapido') ? 1 : 0;
   entries.sort((x, y) => (prio(y) - prio(x)) || (y[0].vel - x[0].vel) || (rnd() - 0.5));
@@ -586,6 +636,12 @@ function resolveRound(A, B, actA, actB, ctx) {
       continue;
     }
     attack(F, O, a.m, s, side(O), push);
+  }
+  for (const [F, O] of [[A, B], [B, A]]) {
+    if (F.hp > 0 && O.mech === 'veneno' && O.hp > 0) {
+      if (F.defending) push({ t: 'steal', who: side(F), txt: `${F.name} se protege do veneno.` });
+      else { const v = Math.max(1, Math.round(F.hpMax * 0.04)); F.hp -= v; push({ t: 'dot', who: side(F), dmg: v, txt: `O veneno de ${O.name} tira ${v} de vida de ${F.name}.` }); }
+    }
   }
   for (const [F, O] of [[A, B], [B, A]]) {
     if (F.hp <= 0) continue;
@@ -614,6 +670,7 @@ function attack(F, O, m, s, so, push) {
   if (!F.isNpc && m !== 'basico') F.used[m] = (F.used[m] || 0) + 1;
   const big = m === 'definitivo';
   if (F.cls === 'arauto' && (m === 'especial' || m === 'definitivo') && rnd() < 0.10) { F.lastMove = m; push({ t: 'fail', who: s, move: name, big, txt: `${name} sai do controle e falha!` }); return; }
+  if (O.mech === 'escudo' && O.rn % 3 === 0 && (m === 'basico' || m === 'rapido')) { F.lastMove = m; push({ t: 'atk', who: s, move: name, m, big: false, miss: true, txt: `O escudo de ${O.name} bloqueia ${name}.` }); return; }
   const repeated = O.mech === 'eco' && m !== 'basico' && F.lastMove === m;
   F.lastMove = m;
   // heals por uso
@@ -844,6 +901,7 @@ async function play(events) {
     else if (e.t === 'conc') { const f = fx(e.who); f.classList.remove('charge'); void f.offsetWidth; f.classList.add('charge'); sfx('conc'); logLine(e.txt); await w(600); }
     else if (e.t === 'heal') { if (!e.quiet || !skipAnim) floatNum(fx(e.who), '+' + e.amt, 'heal'); sfx('heal'); logLine(e.txt); await w(e.quiet ? 300 : 550); }
     else if (e.t === 'steal') { logLine(e.txt); await w(600); }
+    else if (e.t === 'dot') { floatNum(fx(e.who), '−' + e.dmg, ''); sfx('hit'); setBars(e.st); logLine(e.txt); await w(450); }
     else if (e.t === 'fail') { if (e.big && !skipAnim) await ultimate(e.move); logLine(e.txt); floatNum(fx(e.who), 'falhou', 'miss'); await w(500); }
     else if (e.t === 'atk' || e.t === 'reflect') {
       const a = fx(e.who), d = fx(e.t === 'reflect' ? e.who : other(e.who));
@@ -960,7 +1018,7 @@ async function endPve(o) {
   return summary;
 }
 function questAvailable(p, q) { return zoneUnlocked(p, q.zone) && p.level >= q.lvl && (q.req || []).every(r => p.done.includes(r)); }
-function bossFighter(bk, o = {}) { const B = BOSSES[bk]; return npcFighter(B.name, B.lvl, { boss: true, desafio: o.desafio, mech: B.mech, moves: B.moves, hp: o.hp, hpMult: o.hpMult }); }
+function bossFighter(bk, o = {}) { const B = BOSSES[bk]; return npcFighter(B.name, B.lvl, { boss: true, desafio: o.desafio, mech: B.mech, moves: B.moves, hp: o.hp, hpMult: o.hpMult, pow: B.pow }); }
 async function startBoss(qid, mode, desafio) {
   const q = QMAP[qid]; const bk = q.boss; const B = BOSSES[bk];
   const block = fightBlocked(P); if (block) return toast(block, 'bad');
@@ -1365,16 +1423,19 @@ async function applyDuelResult(d, side) {
   const won = d.winner === me; const oppUid = side === 'a' ? d.b : d.a; const opp = players.get(oppUid);
   const oppLvl = side === 'a' ? d.fB.lvl : d.fA.lvl; const sameOrHigher = oppLvl >= P.level;
   const myF = side === 'a' ? d.fA : d.fB;
-  const xpGain = sameOrHigher ? (won ? 20 : 8) * oppLvl : 0;
+  const today = todayKey(); const dx = (P.duelXp && P.duelXp.date === today) ? P.duelXp : { date: today, n: {} }; const duelsToday = dx.n[oppUid] || 0;
+  const xpCapped = duelsToday >= 3;
+  const xpGain = sameOrHigher && !xpCapped ? (won ? 20 : 8) * oppLvl : 0;
   try { await db.doc('duels/' + d.id).update({ applied: { [side]: true } }); } catch (e) { console.warn(e); }
   await save(p => {
     for (const k in (myF.used || {})) { const before = stageOf(p.uses[k] || 0); p.uses[k] = (p.uses[k] || 0) + myF.used[k]; const after = stageOf(p.uses[k]); if (after > before) { const nm = CLASSES[p.cls].moves[k].n[after - 1]; pendingFx.push(() => post(`O golpe de ${p.name} evoluiu para ${nm}.`, 'evo')); } }
     if (won) { p.wins = (p.wins || 0) + 1; p.gold += d.stake || 0; p.duelStreak = (p.duelStreak || 0) + 1; daily(p).wins++; if (p.duelStreak >= 10) grant(p, { title: 'Invicto', cos: 'faixa-invicto' }, { quest: false }); }
     else { p.losses = (p.losses || 0) + 1; p.gold = Math.max(0, p.gold - (d.stake || 0)); p.duelStreak = 0; }
     if (xpGain) addXp(p, xpGain);
+    const d0 = todayKey(); if (!p.duelXp || p.duelXp.date !== d0) p.duelXp = { date: d0, n: {} }; p.duelXp.n[oppUid] = (p.duelXp.n[oppUid] || 0) + 1;
   });
   if (won) post(`${P.name} venceu o duelo contra ${opp?.name || 'o adversário'}${d.stake ? ` e levou ${fmt(d.stake)} de ouro` : ''}.`, 'duel');
-  ctrlClose({ title: won ? 'Vitória no duelo' : 'Derrota no duelo', text: (d.stake ? (won ? `+${fmt(d.stake)} de ouro` : `−${fmt(d.stake)} de ouro`) : 'Duelo amistoso') + (xpGain ? ` · ${fmt(xpGain)} XP` : ' · sem XP (adversário de nível menor)') }, () => { closeDuelView(); flushFx(); });
+  ctrlClose({ title: won ? 'Vitória no duelo' : 'Derrota no duelo', text: (d.stake ? (won ? `+${fmt(d.stake)} de ouro` : `−${fmt(d.stake)} de ouro`) : 'Duelo amistoso') + (xpGain ? ` · ${fmt(xpGain)} XP` : xpCapped ? ' · sem XP: já foram 3 duelos com XP contra ele hoje' : ' · sem XP (adversário de nível menor)') }, () => { closeDuelView(); flushFx(); });
 }
 
 /* ---------- modal ---------- */
@@ -1525,7 +1586,7 @@ function vLutador() {
 /* aba Zonas */
 function vZonas() {
   const p = P; const z = zoneSel; const Z = ZONES[z];
-  const zbtns = Object.entries(ZONES).map(([k, Zz]) => { const n = +k; const un = !Zz.locked && zoneUnlocked(p, n); return `<button class="btn sm ${n === z ? 'primary' : ''}" data-act="zone" data-z="${n}" ${un ? '' : 'disabled'} title="${Zz.locked ? 'Abre depois do teste' : un ? '' : 'Derrote Tarco para liberar'}">${n}. ${esc(Zz.name)} <span class="small">${Zz.range}</span></button>`; }).join('');
+  const zbtns = Object.entries(ZONES).map(([k, Zz]) => { const n = +k; const un = !Zz.locked && zoneUnlocked(p, n); return `<button class="btn sm ${n === z ? 'primary' : ''}" data-act="zone" data-z="${n}" ${un ? '' : 'disabled'} title="${Zz.locked ? 'Abre na semana 5' : un ? '' : 'Derrote ' + BOSSES[QMAP[ZONE_GATE[n]].boss].name + ' para liberar'}">${n}. ${esc(Zz.name)} <span class="small">${Zz.range}</span></button>`; }).join('');
   const qs = QUESTS.filter(q => q.zone === z);
   const qItem = q => {
     const done = p.done.includes(q.id); const avail = questAvailable(p, q);
@@ -1637,7 +1698,7 @@ function vMural() {
 /* aba Temporada */
 function vTemporada() {
   const wk = seasonWeek();
-  const tl = [['Semanas 1–2', 'Zonas 1 e 2 abertas · período de teste', [1, 2]], ['Semanas 3–4', 'Zonas 3 e 4 abertas', [3, 4]], ['Semana 5', 'Zona 5 e cerco coletivo contra Sarnak', [5]], ['Semana 6', 'Grande Torneio', [6]]].map(([a, b, ws]) => `<div class="tl ${ws.includes(wk) ? 'now' : ''}"><span class="label">${a}${ws.includes(wk) ? ' · agora' : ''}</span><span>${b}</span></div>`).join('');
+  const tl = [['Semanas 1–2', 'Zonas 1 a 4 abertas · período de teste', [1, 2]], ['Semanas 3–4', 'Corrida até o nível 40', [3, 4]], ['Semana 5', 'Zona 5 e cerco coletivo contra Sarnak', [5]], ['Semana 6', 'Grande Torneio', [6]]].map(([a, b, ws]) => `<div class="tl ${ws.includes(wk) ? 'now' : ''}"><span class="label">${a}${ws.includes(wk) ? ' · agora' : ''}</span><span>${b}</span></div>`).join('');
   const L = world.lendarios || {};
   const legends = Object.entries(LEGENDS).map(([z, Lg]) => `<div class="item"><div class="grow"><span class="item-t">${esc(Lg.name)}</span><span class="small muted">Zona ${Lg.zone} · ${esc(Lg.desc)}</span></div><span class="small">${L[z] ? 'Dono: ' + esc(L[z].name) : 'Ainda sem dono'}</span></div>`).join('');
   return `<div class="sec"><div class="sec-h"><h2>Temporada 1 · A Fenda de Sarnak</h2><span class="row"><span class="small muted">Semana ${wk} de 6</span><button class="btn sm" data-act="intro">Rever a introdução</button></span></div>
@@ -1924,7 +1985,7 @@ function renderLogin(msg) {
       startGame(r.data.session.user.id);
     } catch (err) {
       const m = String(err.message || '');
-      $('#lgMsg').textContent = /Invalid login/i.test(m) ? 'E-mail ou senha incorretos.' : /already registered/i.test(m) ? 'Esse e-mail já tem conta. Use "Já tenho conta".' : /Password should/i.test(m) ? 'A senha precisa ter pelo menos 6 caracteres.' : 'Não foi possível entrar: ' + m;
+      $('#lgMsg').textContent = /Invalid login/i.test(m) ? 'E-mail ou senha incorretos.' : /signups? (are|is) disabled|not allowed/i.test(m) ? 'Os cadastros estão desativados no servidor do jogo. Avise o dono do jogo.' : /already registered/i.test(m) ? 'Esse e-mail já tem conta. Use "Já tenho conta".' : /Password should/i.test(m) ? 'A senha precisa ter pelo menos 6 caracteres.' : 'Não foi possível entrar: ' + m;
     } finally { $('#lgGo').disabled = false; }
   });
   $('#lgEmail').focus();
